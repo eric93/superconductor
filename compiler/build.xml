@@ -153,6 +153,26 @@
         </java>
     </target>
     
+    <target name="run-alegen-rust" depends="ale-swipl" description="schedule grammar and generate rust">
+        <property name="output.dir" value="./" />
+        <java classname="AGEvalSwipl.RustGenerator" fork="yes">
+            <env key="SWI_HOME_DIR" value="${swipl.home}"/>
+            <classpath>
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
+            </classpath>
+            <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
+            <arg path="${ale.SPsources.dir}"/>
+            <arg path="${aleGrammar}"/>
+            <arg path="${output.dir}"/>
+            <arg value="true"/>
+            <arg value="true"/>
+            <arg value="false"/>
+            <arg value="12"/>
+        </java>
+    </target>
+
+
     <target name="run-alegen-html5" depends="ale-swipl" description="schedule grammar and generate html5">
         <property name="output.dir" value="./" />
         <java classname="AGEvalSwipl.Html5Generator" fork="yes">
