@@ -17,3 +17,4 @@
 /compiler/*.tokens
 *.class
 /superconductorjs/node_modules/
+/compiler/local.properties
