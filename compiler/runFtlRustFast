@@ -1,5 +1,0 @@
-#!/bin/bash
-
-#Usage: ./runFtlRustBackend <input file> <output folder>
-
-ant -DaleGrammar=$1 run-alegen-rust-fast -Doutput.dir=$2

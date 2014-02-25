@@ -20,3 +20,4 @@
 /compiler/local.properties
 /compiler/output/simple-test*
 /compiler/output/liblibftl*.dylib
+/compiler/tmp-output

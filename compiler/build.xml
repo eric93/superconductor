@@ -20,7 +20,7 @@
     <property name="base.dir" value="${basedir}" />
     <property name="build.dir" value="${base.dir}/lib" />
     <property name="dist.dir" value="${base.dir}/dist" />
-    <property name="lib.dir" value="${basedir}/external" />
+    <property name="lib.dir" value="${basedir}/external" /> 
 
     <property name="mud.sources.dir" value="${base.dir}/tbh/src/mud" />
     <property name="mud.version" value="0.5" />
@@ -41,7 +41,7 @@
         <pathelement location="${swipl.home}/lib/jpl.jar"  />
     </path>
 
-
+    
     <target name="init">
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${dist.dir}"/>
@@ -62,7 +62,7 @@
     </target>
 
     <target name="all" description="compiles everything" depends="alegen, ale-swipl"/>
-
+    
     <target name="alefe" description="compiles ale front-end" depends="init,ftlfe-beta">
         <echo message="Running AntLR..." />
         <java jar="${lib.dir}/antlr-3.3-complete.jar" fork="true" failonerror="true">
@@ -71,8 +71,8 @@
     </target>
 
     <target name="ftlfe-beta" description="compiles ale front-end (beta)" depends="init">
-
-<!-- skip surface in production -->
+    
+<!-- skip surface in production -->    
 <!--
         <echo message="Generating AntLR frontend: Lexer" />
         <java jar="${lib.dir}/antlr-3.3-complete.jar" fork="true" failonerror="true">
@@ -95,27 +95,19 @@
         <echo message="Generating AntLR frontend: Identifier checks" />
         <java jar="${lib.dir}/antlr-3.3-complete.jar" fork="true" failonerror="true">
             <arg path="${ale.FEsources.dir}/FTLCheckIdentifiers.g"/>
-        </java>
+        </java>  
 <!--
         <echo message="Generating AntLR frontend: Expand conditionals" />
         <java jar="${lib.dir}/antlr-3.3-complete.jar" fork="true" failonerror="true">
             <arg path="${ale.FEsources.dir}/FTLExpandConditionals.g"/>
-        </java>
--->
+        </java>        
+-->        
     </target>
 
     <target name="alegen" description="compiles alegen (Adam's)" depends="init, alefe">
         <javac destdir="${build.dir}" classpathref="build.path" includeantruntime="false">
-            <src path="${ale.AGsources.dir}" />
-            <src path="${ale.FEsources.dir}" />
-            <!-- <src path="${ale.SPsources.dir}"/>-->
-        </javac>
-    </target>
-
-    <target name="alegen-backend" description="compiles alegen backend">
-        <javac destdir="${build.dir}" classpathref="build.path" includeantruntime="false">
-            <src path="${ale.AGsources.dir}" />
-            <src path="${ale.FEsources.dir}" />
+            <src path="${ale.AGsources.dir}" />   
+            <src path="${ale.FEsources.dir}" />   
             <!-- <src path="${ale.SPsources.dir}"/>-->
         </javac>
     </target>
@@ -125,17 +117,12 @@
         </javac>
     </target>
 
-    <target name="ale-swipl-backend" description="compiles alegen (Leo's)" depends="init">
-        <javac srcdir="${ale.SPsources.dir}"  destdir="${build.dir}" classpathref="build.path" includeantruntime="false">
-        </javac>
-    </target>
-
    <target name="run-alegen-ftl" depends="ale-swipl, ftl-syn" description="schedule grammar and generate ftl cpp">
         <java classname="AGEvalSwipl.CppGenerator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -144,7 +131,7 @@
             <arg value="true"/>
             <arg value="true"/>
             <arg value="false"/>
-            <arg value="8"/>
+            <arg value="8"/>            
         </java>
     </target>
 
@@ -152,8 +139,8 @@
         <java classname="AGEvalSwipl.CppGenerator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -162,55 +149,17 @@
             <arg value="true"/>
             <arg value="true"/>
             <arg value="false"/>
-            <arg value="8"/>
+            <arg value="8"/>            
         </java>
     </target>
-
+    
     <target name="run-alegen-rust" depends="ale-swipl" description="schedule grammar and generate rust">
         <property name="output.dir" value="./" />
         <java classname="AGEvalSwipl.RustGenerator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
-            </classpath>
-            <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
-            <arg path="${ale.SPsources.dir}"/>
-            <arg path="${aleGrammar}"/>
-            <arg path="${output.dir}"/>
-            <arg value="true"/>
-            <arg value="true"/>
-            <arg value="false"/>
-            <arg value="12"/>
-        </java>
-    </target>
-
-    <target name="run-alegen-rust-backend" depends="ale-swipl-backend" description="schedule grammar and generate rust, only compiling backend">
-        <property name="output.dir" value="./" />
-        <java classname="AGEvalSwipl.RustGenerator" fork="yes">
-            <env key="SWI_HOME_DIR" value="${swipl.home}"/>
-            <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
-            </classpath>
-            <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
-            <arg path="${ale.SPsources.dir}"/>
-            <arg path="${aleGrammar}"/>
-            <arg path="${output.dir}"/>
-            <arg value="true"/>
-            <arg value="true"/>
-            <arg value="false"/>
-            <arg value="12"/>
-        </java>
-    </target>
-
-    <target name="run-alegen-rust-fast"  description="schedule grammar and generate rust (do not compile first)">
-        <property name="output.dir" value="./" />
-        <java classname="AGEvalSwipl.RustGenerator" fork="yes">
-            <env key="SWI_HOME_DIR" value="${swipl.home}"/>
-            <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -229,8 +178,8 @@
         <java classname="AGEvalSwipl.Html5Generator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -248,8 +197,8 @@
         <java classname="AGEvalSwipl.Html5Generator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -268,8 +217,8 @@
         <java classname="AGEvalSwipl.Html5Generator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -288,8 +237,8 @@
         <java classname="AGEvalSwipl.WebCLGenerator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -307,8 +256,8 @@
         <java classname="AGEvalSwipl.WebCLGenerator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -322,15 +271,15 @@
     </target>
 
 
-
-
+    
+    
     <target name="run-alegen-flatcpp" depends="ale-swipl" description="schedule grammar and generate Flat (ClusteredTree) C++">
         <property name="output.dir" value="./" />
         <java classname="AGEvalSwipl.FlatCppGenerator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -348,8 +297,8 @@
         <java classname="AGEvalSwipl.FlatCppGenerator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -367,8 +316,8 @@
         <java classname="AGEvalSwipl.OpenCLGenerator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -386,8 +335,8 @@
         <java classname="AGEvalSwipl.OpenCLGenerator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
@@ -401,9 +350,9 @@
     </target>
 
     <target name="ftl-syn" description="toggle FTL synthesized" depends="init">
-        <copy file="${ftl.sources.dir}/constants.h.syn" tofile="${ftl.sources.dir}/constants.h" overwrite="true" />
+        <copy file="${ftl.sources.dir}/constants.h.syn" tofile="${ftl.sources.dir}/constants.h" overwrite="true" />    
     </target>
-
+    
     <target name="ftl" description="compile FTL" depends="init">
        <mkdir dir="${build.dir}/browser"/>
        <cc name="${CC}" outtype="executable" subsystem="console" exceptions="yes" multithreaded="yes" objdir="${build.dir}" outfile="${build.dir}/browser/browser">
@@ -423,7 +372,7 @@
             <libset dir="${sys.lib.dir}" libs="stdc++,xml2,freetype,tbb,tbbmalloc" unless="isWindows"/>
             <libset dir="${lib.dir}/libxml2-2.7.7.win32/lib" libs="libxml2" if="isWindows" />
             <libset dir="${lib.dir}/iconv-1.9.2.win32/lib" libs="iconv" if="isWindows" />
-            <libset dir="${lib.dir}/freetype-2.3.5.win32/lib" libs="freetype" if="isWindows" />
+            <libset dir="${lib.dir}/freetype-2.3.5.win32/lib" libs="freetype"  if="isWindows" />
             <libset dir="${lib.dir}/pthreads-2.8.win32/lib" libs="pthreadVC2" if="isWindows" />
             <libset dir="${lib.dir}/tbb30.win32/lib/ia32/vc9" libs="tbb,tbbmalloc" if="isWindows" />
         </cc>
@@ -448,8 +397,8 @@
         <java classname="AGEvalSwipl.Tests" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>
-                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/>
-                <path refid="build.path" />
+                <pathelement path="${lib.dir}/antlr-3.3-complete.jar"/> 
+                <path refid="build.path" /> 
             </classpath>
             <jvmarg value="-Djava.library.path=${swipl.runtime}"/>
             <arg path="${ale.SPsources.dir}"/>
