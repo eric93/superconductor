@@ -1,48 +1,32 @@
 interface Node {
-    var num : int;
     var inh : int;
     var evenNum: int;
-}
-
-trait syn {
-    actions {
-        loop kids {
-            num := fold 0 .. $-.num + kids$i.num;
-        }
-    }
 }
 
 trait inh {
     actions {
         loop kids{
-            kids.inh := fold 0 .. inh + kids$i.num;
+            kids.inh := fold 0 .. inh;
         }
     }
 }
 
 trait setEvenNum {
     actions {
-        evenNum := isEven(num) ? (isEven(num) ? 1 : (isEven(num) ? 1 : 0)) : 0;
+        evenNum := isEven(inh) ? (isEven(inh) ? 1 : (isEven(inh) ? 1 : 0)) : 0;
     }
 }
 
-class Top(syn, setEvenNum): Node {
+class InlineFlow(setEvenNum): Node {
     children { kids: [Node]; }
     attributes { input inhIn : int; }
     actions {
         loop kids{
-            kids.inh := fold 0 .. inhIn + kids$i.num;
+            kids.inh := fold 0 .. inhIn;
         }
     }
 }
 
-class MidNode(inh, syn, setEvenNum) : Node {
+class BlockFlow(inh, setEvenNum) : Node {
     children { kids: [Node]; }
-}
-
-class Leaf(setEvenNum) : Node {
-    attributes { input numIn : int; }
-    actions {
-        num := numIn;
-    }
 }

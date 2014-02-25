@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ant -DaleGrammar=simple-test.ftl run-alegen-rust-backend -Doutput.dir=output/ && cp output/simple-test.rs /Users/chenyang/Desktop/servo/src/components/main/layout/simple_test.rs

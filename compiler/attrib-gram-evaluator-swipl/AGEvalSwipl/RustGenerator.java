@@ -54,8 +54,8 @@ public class RustGenerator extends BackendBase implements Backend {
 
     public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException {
         String res =
-            "fn visit_" + cls.getName().toLowerCase() + "_" + visitNum + "(node: &mut FtlNode) {\n"
-            + logStmt(2, 2, "visit " + " " + cls.getName() + " (id: \" + node.id.to_str() + \")", "\"" + visitNum + "\"");
+            "fn visit_" + cls.getName().toLowerCase() + "_" + visitNum + "(node: &mut Flow) {\n"
+            + logStmt(2, 2, "visit " + " " + cls.getName() + " (id: \" + base(node).id.to_str() + \")", "\"" + visitNum + "\"");
         return res;
     }
 
@@ -65,7 +65,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
 
     public String openChildLoop (AGEval.Class parent_class, String loopVar, ALEParser ast) {
-        return "node.with_" + loopVar + "(|node,child| {\n";
+        return "with_" + loopVar + "(node, |node,child| {\n";
     }
 
     public String closeChildLoop() {
@@ -74,14 +74,12 @@ public class RustGenerator extends BackendBase implements Backend {
 
 
     public String printCurrentPipelineBuild (Hashtable<Variable, Term> binding) throws InvalidGrammarException {
-        String res = " fn main() {\n"+
-            "    layout(&mut generateTree());\n}\n" +
-            "fn layout (root: &mut FtlNode) {\n";
+        String res = "pub fn layout (root: &mut Flow) {\n";
         int pass = 0;
         for (Term visit : binding.get("P").toTermArray()) {
             String stencil = visit.arg(2).arg(1).toString();
             if (stencil.equals("tdLtrU")) throw new InvalidGrammarException("Rust backend does not support inorder traversals"); // From HTML5 Engine: res += "  visit_" + pass + "(root); //inorder visitors handle recursion \n";
-            else if (stencil.equals("td")) res += "  inherit(|node| visit_" + pass + "(node), root);\n";
+            else if (stencil.equals("td")) res += "  root.traverse_preorder(&mut Visit" + pass + "Traversal.clone());\n";
             else if (stencil.equals("bu")) res += "  synthesize(|node| visit_" + pass + "(node), root);\n";
             else if (stencil.equals("buSubInorder")) res += "  buSubInorder(visit_" + pass + ", root);\n";
             else throw new InvalidGrammarException("Unknown stencil type: " + stencil);
@@ -132,10 +130,10 @@ public class RustGenerator extends BackendBase implements Backend {
         //isParseData = (isParent ? cls : cls.getChildByName(child)).findVertexByExtName(prop).isVertexType(VertType.FIELD);
         if (isParent) {
 
-            return "node.setAttrib( \"" + propClean + "\", ";
+            return "setFlowAttr(node, \"" + propClean + "\", ";
         } else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
 
-            return "child.setAttrib( \"" + propClean + "\", ";
+            return "setFlowAttr(child, \"" + propClean + "\", ";
         } else {
             throw new InvalidGrammarException("Rust backend does not support singleton children");
             // From HTML5 Engine: return "setAttribSafe(getChildByRefName(node,\"" + childClean + "\"), \"" + propClean + "\", ";
@@ -198,9 +196,9 @@ public class RustGenerator extends BackendBase implements Backend {
         String cleanProp = prop.replace("$$", "").replace("$i","").replace("$-", "").replace("[-1]", "").toLowerCase();
         if (prop.contains("$$")) {
             if (isParent) {
-                return "node.getAttrib( \"" + cleanProp + "\")";
+                return "getFlowAttr(node, \"" + cleanProp + "\")";
             } else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
-                return "node.getAttrib \"" + child + "_" + cleanProp + "_last\")";
+                return "getFlowAttr(node, \"" + child + "_" + cleanProp + "_last\")";
             } else {
                 throw new InvalidGrammarException("Cannot access $$ attrib of a non-multi child / self reduction: " + lhs);
             }
@@ -208,27 +206,27 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent) {
                 //FIXME fine for reduction?...
                 throw new InvalidGrammarException("Rhs: Cannot access $i of self attrib in class/interface " + cls.getName() + ": " + lhs);
-                //return "getAttribSafe(node.getAttribute(\"" + cleanProp + "\"))";
+                //getAttribSafe(node.getAttribute(\"" + cleanProp + "\"))";
             } else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
                 String maybeD = getInputDefaultMaybe(cls.getChildByName(child), cleanProp, ast);
                 if (maybeD == null) {
                     ALEParser.ExtendedVertex ev = Generator.lookupAttributeExtended(child + "@" + cleanProp, cls, ast);
                     //TODO(eatkinson): Figure out why there are two cases here.
                     return (ev != null && ev.isMaybeType) ?
-                        ("child.getAttrib( \"" + cleanProp + "\")")
-                        : ("child.getAttrib( \"" + cleanProp + "\")");
-                } else return "child.getAttrib( \"" + cleanProp + "\", " + maybeD + ")";
+                        ("getFlowAttr(child, \"" + cleanProp + "\")")
+                        : ("getFlowAttr(child, \"" + cleanProp + "\")");
+                } else return "getFlowAttr(child, \"" + cleanProp + "\", " + maybeD + ")";
             } else {
                 throw new InvalidGrammarException("Cannot access $i attrib of a non-multi child: " + lhs);
-                //return "getAttribSafe(getChildByRefName(node,\"" + child + "\").getAttribute(\"" + cleanProp + "\"))";
+                //return getAttribSafe(getChildByRefName(node,\"" + child + "\").getAttribute(\"" + cleanProp + "\"))";
             }
         } else if (prop.contains("$-")) {
             if (isParent) {
-                return "node.getAttrib( \"" + cleanProp + "\")";
+                return "getFlowAttr(node, \"" + cleanProp + "\")";
                 //cleanProp + "_last"; //FIXME check acc assign happens last
             } else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
-                return "if first { node.getAttrib(\"" + child.toLowerCase() + "_" + cleanProp + "_init\") } \n" +
-                    "else {node.getAttrib(\"" + cleanProp + "\")};\n";
+                return "if first { getFlowAttr(node,\"" + child.toLowerCase() + "_" + cleanProp + "_init\") } \n" +
+                    "else {getFlowAttr(node,\"" + cleanProp + "\")};\n";
             } else {
                 throw new InvalidGrammarException("Cannot access $- attrib of a non-multi child: " + lhs);
             }
@@ -248,10 +246,10 @@ public class RustGenerator extends BackendBase implements Backend {
                     //TODO(eatkinson): Figure out why there are two cases here.
                     ALEParser.ExtendedVertex ev = Generator.lookupAttributeExtended(prop, cls, ast);
                     return (ev != null && ev.isMaybeType) ?
-                        ("node.getAttrib( \"" + cleanProp + "\")") :
-                        ("node.getAttrib( \"" + cleanProp+ "\")");
+                        ("getFlowAttr(node, \"" + cleanProp + "\")") :
+                        ("getFlowAttr(node, \"" + cleanProp+ "\")");
                 }
-                else return "node.getAttrib( \"" + cleanProp + "\", " + maybeD + ")";
+                else return "getFlowAttr(node, \"" + cleanProp + "\", " + maybeD + ")";
             } else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
                 //throw new InvalidGrammarException("Cannot read multichild attrib without indexer ($-, ...): " + cls.getName() + "::?? := ... " + lhs);
                 //FIXME currently allowed because logging might read back on "loop ... { ... child.x := ... }"
@@ -262,9 +260,9 @@ public class RustGenerator extends BackendBase implements Backend {
                         ALEParser.ExtendedVertex ev = Generator.lookupAttributeExtended(child + "@" + cleanProp, cls, ast);
                         //TODO(eatkinson): Figure out why there are two cases here.
                         return (ev != null && ev.isMaybeType) ?
-                            ("child.getAttrib( \"" + cleanProp + "\")") :
-                            ("child.getAttrib( \"" + cleanProp + "\")");
-                    } else return "child.getAttrib( \"" + cleanProp + "\", " + maybeD + ")";
+                            ("getFlowAttr(child, \"" + cleanProp + "\")") :
+                            ("getFlowAttr(child, \"" + cleanProp + "\")");
+                    } else return "getFlowAttr(child, \"" + cleanProp + "\", " + maybeD + ")";
                 } catch (InvalidGrammarException e) {
                     throw new InvalidGrammarException("rhs val fail ( " + cls.getName() + "): " + lhs + " => " + prop + " => " + cleanProp + ", " + maybeD + "\n"
                                                       + e.getMessage());
@@ -287,8 +285,8 @@ public class RustGenerator extends BackendBase implements Backend {
 
     public String toAcc(String lhsRaw, AGEval.Class c) {
         String lhs = lhsRaw.toLowerCase();
-        if (!lhs.contains("@")) return "node.getAttrib( \"" + lhs + "\")";
-        if (lhs.contains("self@")) return "node.getAttrib( \"" + lhs + "\")";
+        if (!lhs.contains("@")) return "getFlowAttr(node, \"" + lhs + "\")";
+        if (lhs.contains("self@")) return "getFlowAttr(node, \"" + lhs + "\")";
         return lhs.replace("@", "_") + "_last";
     }
 
@@ -379,9 +377,15 @@ public class RustGenerator extends BackendBase implements Backend {
     public String visitDispatcher(int visit, AGEvaluator aleg, HashSet<AGEval.Class> buIns, HashSet<AGEval.Class> bus) {
         HashSet<AGEval.Class> inIns = getInIns(aleg, bus, buIns);
 
+        String traversal = "Visit" + visit + "Traversal";
         String res =
-            "fn visit_"+ visit + " (node: &mut FtlNode) {\n" +
-            "    match node.ty {\n" ;
+            "#[deriving(Clone)]\n" +
+            "pub struct " + traversal + ";\n" +
+            "impl PreorderFlowTraversal for " + traversal + " {\n" +
+            "    #[inline]\n" +
+            "    fn process(&mut self, flow: &mut Flow) -> bool {\n" +
+            "        match flow.class() {\n";
+
         //boolean hasText = false;
         for (AGEval.Class cls : aleg.classes) {
             /*
@@ -403,11 +407,13 @@ public class RustGenerator extends BackendBase implements Backend {
               res +=
               "        return visit_" + cls.getName().toLowerCase() + "_" + visit + "(node);\n";
               }*/
-            res += "        " + cls.getName().toLowerCase() + " => visit_" + cls.getName().toLowerCase() + "_" + visit + "(node),\n";
+            res += "            " + cls.getName() + " => visit_" + cls.getName().toLowerCase() + "_" + visit + "(flow),\n";
         }
 
+        res += "        }\n";
+        res += "    true\n";
         res += "    }\n";
-        res += "}\n";
+        res += "}\n\n";
         /*if (hasText) res += "  if (node.nodeType == 3) return visit_textbox_" + visit + "(node);\n";
           else res += "  if (node.nodeType == 3) { logger.log(\"skipping text node 2\"); return; }\n";*/
         return res;
@@ -453,8 +459,10 @@ public class RustGenerator extends BackendBase implements Backend {
                                                                                                                                                       InvalidGrammarException {
         String res =
             "#[feature(globs, macro_rules)];\n"+
-            "extern mod libftl;\n" +
-            "use libftl::*;\n\n";
+            "use layout::libftl::*;\n" +
+            "use layout::block::BlockFlow; use layout::inline::InlineFlow;\n" +
+            "use layout::flow::{Flow, FlowLeafSet, ImmutableFlowUtils, MutableFlowUtils, MutableOwnedFlowUtils, base};" +
+            "use layout::flow::{PreorderFlowTraversal, PostorderFlowTraversal};\n";
         res += fHeaders;
         res += visitOut;
         res += visitDispatches;
