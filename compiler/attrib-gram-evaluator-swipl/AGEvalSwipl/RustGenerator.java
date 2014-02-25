@@ -79,8 +79,8 @@ public class RustGenerator extends BackendBase implements Backend {
         for (Term visit : binding.get("P").toTermArray()) {
             String stencil = visit.arg(2).arg(1).toString();
             if (stencil.equals("tdLtrU")) throw new InvalidGrammarException("Rust backend does not support inorder traversals"); // From HTML5 Engine: res += "  visit_" + pass + "(root); //inorder visitors handle recursion \n";
-            else if (stencil.equals("td")) res += "  root.traverse_preorder(&mut Visit" + pass + "Traversal.clone());\n";
-            else if (stencil.equals("bu")) res += "  synthesize(|node| visit_" + pass + "(node), root);\n";
+            else if (stencil.equals("td")) res += "  root.traverse(&mut Visit" + pass + "Traversal.clone(),PreorderTraversalType);\n";
+            else if (stencil.equals("bu")) res += "  root.traverse(&mut Visit" + pass + "Traversal.clone(),PostorderTraversalType);\n";
             else if (stencil.equals("buSubInorder")) res += "  buSubInorder(visit_" + pass + ", root);\n";
             else throw new InvalidGrammarException("Unknown stencil type: " + stencil);
             pass++;
@@ -381,7 +381,7 @@ public class RustGenerator extends BackendBase implements Backend {
         String res =
             "#[deriving(Clone)]\n" +
             "pub struct " + traversal + ";\n" +
-            "impl PreorderFlowTraversal for " + traversal + " {\n" +
+            "impl FlowTraversal for " + traversal + " {\n" +
             "    #[inline]\n" +
             "    fn process(&mut self, flow: &mut Flow) -> bool {\n" +
             "        match flow.class() {\n";
@@ -407,7 +407,7 @@ public class RustGenerator extends BackendBase implements Backend {
               res +=
               "        return visit_" + cls.getName().toLowerCase() + "_" + visit + "(node);\n";
               }*/
-            res += "            " + cls.getName() + " => visit_" + cls.getName().toLowerCase() + "_" + visit + "(flow),\n";
+            res += "            " + cls.getName() + "Class => visit_" + cls.getName().toLowerCase() + "_" + visit + "(flow),\n";
         }
 
         res += "        }\n";
@@ -461,8 +461,8 @@ public class RustGenerator extends BackendBase implements Backend {
             "#[feature(globs, macro_rules)];\n"+
             "use layout::libftl::*;\n" +
             "use layout::block::BlockFlow; use layout::inline::InlineFlow;\n" +
-            "use layout::flow::{Flow, FlowLeafSet, ImmutableFlowUtils, MutableFlowUtils, MutableOwnedFlowUtils, base};" +
-            "use layout::flow::{PreorderFlowTraversal, PostorderFlowTraversal};\n";
+            "use layout::flow::{Flow, FlowLeafSet, BlockFlowClass, InlineFlowClass, ImmutableFlowUtils, MutableFlowUtils, MutableOwnedFlowUtils, base};\n" +
+            "use layout::flow::{FlowTraversal, PostorderTraversalType, PreorderTraversalType};\n";
         res += fHeaders;
         res += visitOut;
         res += visitDispatches;
