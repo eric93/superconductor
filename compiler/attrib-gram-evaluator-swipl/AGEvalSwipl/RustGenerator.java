@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 
 //import org.antlr.runtime.RecognitionException;
@@ -44,43 +45,77 @@ public class RustGenerator extends BackendBase implements Backend {
 			params +=  " " + assign._variables.get(arg) + ": int";
 		}
 		params += ")";
-		return //Vertex.typeToString(lookupAttribute(assign._sink, assign._class).myValueType)
-			"//@type action\n" +
+		return "//@type action\n" +
 			"fn " + fName + " " + params + " -> int { " + replaceTypeVals(assign._indexedBody, ast) + " }\n";
 	}
 	
+    public String visitBlockHeader(Class cls, ALEParser ast) throws InvalidGrammarException {
+        ArrayList<AGEval.IFace> child_ifaces = new ArrayList<AGEval.IFace>();
+
+        if (child_ifaces.size() > 1)
+            throw new InvalidGrammarException("Rust backend does not yet support classes with more than one child array");
+
+        for(AGEval.IFace child_iface : cls.getChildMappings().values()){
+            child_ifaces.add(child_iface);
+        }
+
+        String func = " fn with_all_children(&mut self, func: |&mut FtlNode|) {\n";
+
+        for (AGEval.IFace child_iface : child_ifaces) {
+            func += "  for child in self." + cls.getChildNamesForType(child_iface).get(0) + ".mut_iter() {\n";
+            func += "    func(*child);\n";
+            func += "  }\n";
+        }
+
+        func += " }\n";
+
+        return "impl FtlNode" + " for " + cls.getName() + "{\n" + func;
+    }
+
+    public String visitBlockFooter(Class cls, ALEParser ast) throws InvalidGrammarException {
+        return "}\n\n";
+    }
+
 	public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException {
-		String res =
-			"fn visit_" + cls.getName().toLowerCase() + "_" + visitNum + "(node: &mut FtlNode) {\n" 
-			+ logStmt(2, 2, "visit " + " " + cls.getName() + " (id: \" + node.id.to_str() + \")", "\"" + visitNum + "\"");
+		String res = " fn visit_" + visitNum + "(&mut self) {\n" 
+			+ logStmt(2, 2, "visit " + " " + cls.getName() + " (id: \" + self.id.to_str() + \")", "\"" + visitNum + "\"");
 		return res;
 	}
 	
 	public String visitFooter(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException {
-		 return " \n}\n";
+		 return " \n }\n";
 	}
 
 	
 	public String openChildLoop (AGEval.Class parent_class, String loopVar, ALEParser ast) {
-        return "node.with_" + loopVar + "(|node,child| {\n";
+
+        AGEval.IFace iface = parent_class.getChildMappings().get(loopVar);
+
+        String ret = "";
+        ret += "  let mut children = util::replace(&mut self." + loopVar + ", ~[]);\n";
+        ret += "  for child in children.mut_iter() {\n";
+        ret += "  let child: &mut " + iface.getName() + "  = base(*child);\n";
+        return ret;
     }
 	
-	public String closeChildLoop() {
-		return   "    });\n";
+	public String closeChildLoop(String loopVar) {
+        String ret = "";
+        ret += "  }\n";
+        ret += "  self." + loopVar + " = children;";
+        return ret;
 	}
 
 	
 	public String printCurrentPipelineBuild (Hashtable<Variable, Term> binding) throws InvalidGrammarException {
-		String res = " fn main() {\n"+
+		String res = "fn main() {\n"+
             "    layout(&mut generateTree());\n}\n" +
             "fn layout (root: &mut FtlNode) {\n";
 		int pass = 0;
 		for (Term visit : binding.get("P").toTermArray()) {
 			String stencil = visit.arg(2).arg(1).toString();
-			if (stencil.equals("tdLtrU")) throw new InvalidGrammarException("Rust backend does not support inorder traversals"); // From HTML5 Engine: res += "  visit_" + pass + "(root); //inorder visitors handle recursion \n";				
-			else if (stencil.equals("td")) res += "  inherit(|node| visit_" + pass + "(node), root);\n";
-			else if (stencil.equals("bu")) res += "  synthesize(|node| visit_" + pass + "(node), root);\n";
-			else if (stencil.equals("buSubInorder")) res += "  buSubInorder(visit_" + pass + ", root);\n";
+			if (stencil.equals("tdLtrU")) throw new InvalidGrammarException("Rust backend does not support inorder traversals");
+			else if (stencil.equals("td")) res += "  inherit(|node| node.visit_" + pass + "(), root);\n";
+			else if (stencil.equals("bu")) res += "  synthesize(|node| node.visit_" + pass + "(), root);\n";
 			else throw new InvalidGrammarException("Unknown stencil type: " + stencil);
 			pass++;			
 		}			
@@ -102,13 +137,15 @@ public class RustGenerator extends BackendBase implements Backend {
 	}
 	
 	public String asgnE(String lhs, String rhs) { return lhs + rhs + ")"; }
-	public String asgnS(String lhs, String rhs) { return asgnE(lhs, rhs) + ";\n"; }
+    //TODO(eatkinson): why is this never called?
+	public String asgnS(String lhs, String rhs) { //return asgnE(lhs, rhs) + ";/*asgnS*/\n"; 
+        return "";
+    }
 	
 	
 	public String lhsToAddress(String lhs, Class cls, ALEParser ast)
 			throws InvalidGrammarException {
 	  	boolean isParent;
-	  	//boolean isParseData;
 	  	String child;
 	  	String prop;
 	  	if (lhs.split("@").length == 2) {
@@ -122,14 +159,26 @@ public class RustGenerator extends BackendBase implements Backend {
 	  	}
 	  	String childClean = child.toLowerCase();
 	  	String propClean = prop.toLowerCase();
-	  	//isParseData = (isParent ? cls : cls.getChildByName(child)).findVertexByExtName(prop).isVertexType(VertType.FIELD);	  		  	
+
+        // Initial loop values are local variables.
+        if (propClean.contains("_init")) {
+            return "let " + propClean + " = (";
+        }
+
 	  	if (isParent) {
-	  		return "node.setAttrib( \"" + propClean + "\", ";  
+            // Parent attributes are all set in the top-level block of the visitor, so node is in
+            // scope.
+            if (!(cls.getPrivAttributes().containsKey(prop) || cls.hasField(prop)))
+                // If the attribute is in the interface, it is not in the node struct
+                // but the base field.
+                return "self.base." + propClean + " = (";
+            else 
+                return "self." + propClean + " = (";
 	  	} else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
-	  		return "child.setAttrib( \"" + propClean + "\", ";
-	  	} else {
-            throw new InvalidGrammarException("Rust backend does not support singleton children");
-	  		// From HTML5 Engine: return "setAttribSafe(getChildByRefName(node,\"" + childClean + "\"), \"" + propClean + "\", "; 
+            // Children arrays are all assigned to inside loops, so child will be in scope.
+            return "child." + propClean + " = (";
+        } else {
+            return "self." + childClean + "." + propClean + " = (";
 	  	}
 	}
 
@@ -168,10 +217,10 @@ public class RustGenerator extends BackendBase implements Backend {
 			return "'" + v.maybeDefault + "'";		
 		}
 	}
-	
-	public String rhsToVal(String lhs, AGEval.Class cls, ALEParser ast)
-			throws InvalidGrammarException {
-		boolean isParent;
+
+    public String rhsToVal(String lhs, AGEval.Class cls, ALEParser ast) 
+            throws InvalidGrammarException{
+        boolean isParent;
 	  	String child;
 	  	String prop;
 	  	if (lhs.split("@").length == 2) {
@@ -179,107 +228,67 @@ public class RustGenerator extends BackendBase implements Backend {
 	  		isParent = child.equals("self");
 	  		prop = lhs.split("@")[1];	
 	  	} else {
-	  		
-	  		if (ast.types.get("displayType").contains(lhs)) return "'" + lhs.toLowerCase() + "'";
-	  		
 	  		child = ""; //silly Java
 	  		isParent = true;
 	  		prop = lhs;
 	  	}
-  		String cleanProp = prop.replace("$$", "").replace("$i","").replace("$-", "").replace("[-1]", "").toLowerCase();
-	  	if (prop.contains("$$")) {
-	  		if (isParent) {
-		  		return "node.getAttrib( \"" + cleanProp + "\")";		  			
-	  		} else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
-		  		return "node.getAttrib \"" + child + "_" + cleanProp + "_last\")";		  			
-	  		} else {
-	  			throw new InvalidGrammarException("Cannot access $$ attrib of a non-multi child / self reduction: " + lhs);
-	  		}
-	  	} else if (prop.contains("$i")) {
-	  		if (isParent) {
-	  			//FIXME fine for reduction?...
-	  			throw new InvalidGrammarException("Rhs: Cannot access $i of self attrib in class/interface " + cls.getName() + ": " + lhs);
-	  			//return "getAttribSafe(node.getAttribute(\"" + cleanProp + "\"))";
-	  		} else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
-	  			String maybeD = getInputDefaultMaybe(cls.getChildByName(child), cleanProp, ast);
-	  			if (maybeD == null) {
-	  				ALEParser.ExtendedVertex ev = Generator.lookupAttributeExtended(child + "@" + cleanProp, cls, ast);		
-                    //TODO(eatkinson): Figure out why there are two cases here.
-	  				return (ev != null && ev.isMaybeType) ? 
-	  						("child.getAttrib( \"" + cleanProp + "\")")
-	  						: ("child.getAttrib( \"" + cleanProp + "\")");
-	  			} else return "child.getAttrib( \"" + cleanProp + "\", " + maybeD + ")";	  			
-	  		} else {
-	  			throw new InvalidGrammarException("Cannot access $i attrib of a non-multi child: " + lhs);
-	  			//return "getAttribSafe(getChildByRefName(node,\"" + child + "\").getAttribute(\"" + cleanProp + "\"))";	
-	  		}		  		
-	  	} else if (prop.contains("$-")) {
-	  		if (isParent) {
-	  			return "node.getAttrib( \"" + cleanProp + "\")";
-	  					//cleanProp + "_last"; //FIXME check acc assign happens last	
-	  		} else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
-                return "if first { node.getAttrib(\"" + child.toLowerCase() + "_" + cleanProp + "_init\") } \n" +
-                    "else {node.getAttrib(\"" + cleanProp + "\")};\n";
-	  		} else {
-	  			throw new InvalidGrammarException("Cannot access $- attrib of a non-multi child: " + lhs);
-	  		}
-	  	} else if (prop.contains("[-1]"))  {
-	  		if (isParent) {
-	  			throw new InvalidGrammarException("cannot use [-1] on a self attrib: " + lhs);	
-	  		} else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
-	  			return "getAttribSafe(node, (\"" + child.toLowerCase() + "_" + cleanProp + "_init\"))";			  			
-	  		} else {
-	  			throw new InvalidGrammarException("Cannot access $- attrib of a non-multi child: " + lhs);
-	  		}
-	  		
-	  	} else {
-	  		if (isParent) {	  			
-	  			String maybeD = getInputDefaultMaybe(cls, cleanProp, ast);
-	  			if (maybeD == null) {
-                    //TODO(eatkinson): Figure out why there are two cases here.
-	  				ALEParser.ExtendedVertex ev = Generator.lookupAttributeExtended(prop, cls, ast);		
-	  				return (ev != null && ev.isMaybeType) ? 
-	  						("node.getAttrib( \"" + cleanProp + "\")") :
-	  						("node.getAttrib( \"" + cleanProp+ "\")");
-	  			}
-	  			else return "node.getAttrib( \"" + cleanProp + "\", " + maybeD + ")";	  			
-	  		} else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
-	  			//throw new InvalidGrammarException("Cannot read multichild attrib without indexer ($-, ...): " + cls.getName() + "::?? := ... " + lhs);
-	  			//FIXME currently allowed because logging might read back on "loop ... { ... child.x := ... }"
-	  			String maybeD = getInputDefaultMaybe(cls.getChildByName(child), cleanProp, ast);
-	  			
-	  			try {
-		  			if (maybeD == null) {
-		  				ALEParser.ExtendedVertex ev = Generator.lookupAttributeExtended(child + "@" + cleanProp, cls, ast);		
-                        //TODO(eatkinson): Figure out why there are two cases here.
-		  				return (ev != null && ev.isMaybeType) ? 
-		  						("child.getAttrib( \"" + cleanProp + "\")") :
-		  						("child.getAttrib( \"" + cleanProp + "\")");
-		  			} else return "child.getAttrib( \"" + cleanProp + "\", " + maybeD + ")";
-	  			} catch (InvalidGrammarException e) {
-	  				throw new InvalidGrammarException("rhs val fail ( " + cls.getName() + "): " + lhs + " => " + prop + " => " + cleanProp + ", " + maybeD + "\n"
-	  						+ e.getMessage());
-	  			}
-	  			
-	  		} else {
-  				String maybeD = getInputDefaultMaybe(cls.getChildByName(child), cleanProp, ast);
-                //TODO(eatkinson): Figure out why there are two cases here.
-                throw new InvalidGrammarException("Rust backend does not support singleton children");
-	  			/*if (maybeD == null) {
-	  				ALEParser.ExtendedVertex ev = Generator.lookupAttributeExtended(child + "@" + cleanProp, cls, ast);		
-	  				return (ev != null && ev.isMaybeType) ? 
-	  						("getInputMaybeAttribSafe(getChildByRefName(node, \"" + child + "\"), \"" + cleanProp + "\")") :
-	  						("getAttribSafe(getChildByRefName(node,\"" + child + "\"), \"" + cleanProp + "\")");
-	  			} else  return "getInputAttribSafe(getChildByRefName(node, \"" + child + "\"), \"" + cleanProp + "\", " + maybeD + ")";	  			
-                */
-	  		}
-	  	}	
-	}
+
+        String originalProp = prop.replace("$$", "").replace("$i","").replace("$-", "").replace("[-1]", "");
+        String cleanProp = originalProp.toLowerCase();
+
+        if (isParent && !cleanProp.contains("_init") && !(cls.getPrivAttributes().containsKey(prop) || cls.hasField(prop)))
+            cleanProp = "base." + cleanProp;
+
+        // Special cases for loop elements
+        if (prop.contains("$$")) {
+            if (isParent)
+                return "self." + cleanProp;
+            else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
+                return child + "_" + cleanProp;
+            else
+	  			throw new InvalidGrammarException("Cannot access $$ attrib of " + 
+                        "a non-multi child / self reduction: " + lhs);
+        } else if (prop.contains("$i")) {
+            if (isParent)
+                throw new InvalidGrammarException("Cannot access $i of self in class: " + cls.getName());
+            else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
+                return "child." + cleanProp;
+            else
+	  			throw new InvalidGrammarException("Cannot access $i attrib of a non-multi child: " + cls.getName());
+        } else if (prop.contains("$-")) {
+            if (isParent)
+                return "self." + cleanProp;
+            else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
+                return "if first { " + child + "_" + cleanProp + "_init } else { child." + cleanProp + "_last }";
+            else
+                throw new InvalidGrammarException("Cannot access $- attrib of " + 
+                        "a non-multi child / self reduction: " + lhs);
+        } else if (prop.contains("[-1]")) {
+            throw new InvalidGrammarException("[-1] is not supported by the Rust backend.");
+        } else {
+            // Initial loop values are local variables.
+            if (cleanProp.contains("_init")) {
+                return cleanProp;
+            }
+
+            // We can assume here that the attribute is not a special loop construct.
+            if (isParent)
+                return "self." + cleanProp;
+            else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
+                throw new InvalidGrammarException("Cannot access non-loop attrib of multichild.");
+            else
+                throw new InvalidGrammarException("Cannot access non-loop attrib of " + 
+                        "a non-multi child / self reduction: " + lhs);
+        }
+    }
 	
 	public String toAcc(String lhsRaw, AGEval.Class c) {
 		String lhs = lhsRaw.toLowerCase();
-		if (!lhs.contains("@")) return "node.getAttrib( \"" + lhs + "\")";
-		if (lhs.contains("self@")) return "node.getAttrib( \"" + lhs + "\")";
+        if (!lhs.contains("@"))
+            return "self." + lhs + "_last";
+        if(lhs.contains("self@"))
+            return "self." + lhs + "_last";
+
 		return lhs.replace("@", "_") + "_last";
 	}
 	
@@ -327,81 +336,23 @@ public class RustGenerator extends BackendBase implements Backend {
 		return "      }\n";
 	}
 	
-    //TODO(eatkinson): figure out what this method does
 	public boolean anyVisitAllowsText (ALEParser ast) {
-		for (AGEval.Class c : ast.classes) if (c.getName().toLowerCase().equals("textbox")) return true;
-		return false;
+        return true;
+		//for (AGEval.Class c : ast.classes) if (c.getName().toLowerCase().equals("textbox")) return true;
+		//return false;
 	}
-	/*
-	 * 
-	public String visitAllowsText(AGEval.Class cls) throws InvalidGrammarException {
-		
-		AGEval.IFace f = null;
-		for (Entry<String, AGEval.IFace> e : cls.getChildMappings().entrySet()) {
-			if (e.getKey().toLowerCase().equals(childName.toLowerCase())) {
-				f = e.getValue();
-				break;
-			}
-		}
-		if (f == null) throw new InvalidGrammarException("childrenRecur could not find child " + childName + " in " + cls.getName());
-		boolean childCanBeText = false;
-		for (AGEval.Class fc : f.getImplementingClasses()) {
-			if (fc.getName().toLowerCase().equals("text")) {
-				childCanBeText  = true;
-				break;
-			}
-		}
-		return ", " + (childCanBeText ? "true" : "false"); 
 
-	}
-	*/
-
-    //TODO(eatkinson): figure out what this method does
 	public String childrenRecur (AGEval.Class cls, String childName, int visitNum, ALEParser ast) throws InvalidGrammarException {		
-		return "      visit_" + visitNum + "(child, false, node); //recur\n";
+		return "      visit_" + visitNum + "(child); //recur\n";
 	}
 
-    //TODO(eatkinson): figure out what this method does
 	public String childRecur(AGEval.Class cls, String childName, int visitNum) throws InvalidGrammarException {
 		return "visit_" + visitNum + "(getChildByRefName(node, \"" + childName + "\"), false, node); //recur\n";
 	}
 	
 
 	public String visitDispatcher(int visit, AGEvaluator aleg, HashSet<AGEval.Class> buIns, HashSet<AGEval.Class> bus) {
-		HashSet<AGEval.Class> inIns = getInIns(aleg, bus, buIns);
-
-		String res = 
-			"fn visit_"+ visit + " (node: &mut FtlNode) {\n" +
-            "    match node.ty {\n" ;
-		//boolean hasText = false;
-		for (AGEval.Class cls : aleg.classes) {
-            /*
-			if (cls.getName().toLowerCase().equals("textbox")) {
-				hasText = true;
-				continue;
-			} else {
-				res += 
-					"      case \"" + cls.getName().toLowerCase() + "\":\n";
-				if (buIns != null && buIns.contains(cls)) { // is inorder and may have bu parent: will be called 2x, need to dynamically filter out global variant
-					res += 
-					"        if (isGlobalCall && parent && isInorder(parent, " + visit + ")) return;\n";				
-				} else if (buIns != null && inIns.contains(cls))	{
-					res += 
-					"        if (isGlobalCall && parent) return;\n";									
-				}
-				res += 
-					"        logger.log(\"global: \" + isGlobalCall + \", parent: \" + parent);\n";
-				res +=
-					"        return visit_" + cls.getName().toLowerCase() + "_" + visit + "(node);\n";
-			}*/
-            res += "        " + cls.getName().toLowerCase() + " => visit_" + cls.getName().toLowerCase() + "_" + visit + "(node),\n";
-		}
-
-		res += "    }\n";
-		res += "}\n";
-		/*if (hasText) res += "  if (node.nodeType == 3) return visit_textbox_" + visit + "(node);\n";
-		else res += "  if (node.nodeType == 3) { logger.log(\"skipping text node 2\"); return; }\n";*/
-		return res;
+        return "";
 	}
 
 
@@ -443,8 +394,15 @@ public class RustGenerator extends BackendBase implements Backend {
 			boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Hashtable<Variable, Term> binding, AGEvaluator aleg) throws IOException,
 			InvalidGrammarException {
 		String res = "extern mod libftl;\n" +
-            "use libftl::{FtlNode,log,midnode,leaf,generateTree,inherit,synthesize};\n"+ 
-            "use std::int::to_str_bytes;\n";
+            "use libftl::{base,Node,log,MidNode,Leaf,inherit,synthesize};\n"+ 
+            "use std::int::to_str_bytes;\n" + 
+            "use std::util;\n" +
+            "trait FtlNode {\n" +
+            "  fn with_all_children(&mut self, func: |&mut FtlNode|);\n" +
+            "  fn visit_0(&mut self);\n" + 
+            "  fn visit_1(&mut self);\n" + 
+            "}\n";
+
 		res += fHeaders;		
 		res += visitOut;
 		res += visitDispatches;

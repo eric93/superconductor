@@ -54,6 +54,11 @@ public class Html5Generator extends BackendBase implements Backend {
 //		System.out.println("// " + fName + args + ";");
 	}
 	
+
+    public String visitBlockHeader(Class cls, ALEParser ast) throws InvalidGrammarException { return "";}
+    public String visitBlockFooter(Class cls, ALEParser ast) throws InvalidGrammarException { return "";}
+
+
 	public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException {
 		String res =
 			"function visit_" + cls.getName().toLowerCase() + "_" + visitNum + "(node) {\n" 
@@ -73,7 +78,7 @@ public class Html5Generator extends BackendBase implements Backend {
 			   + "      var child = children[i]; \n";		
 	}
 	
-	public String closeChildLoop() {
+	public String closeChildLoop(String loopVar) {
 		return   "    }\n"
 			   + "  })();\n";		
 	}

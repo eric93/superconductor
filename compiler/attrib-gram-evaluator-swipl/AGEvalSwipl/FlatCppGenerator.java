@@ -289,6 +289,12 @@ public class FlatCppGenerator implements Backend {
 		return contents.toString();
 	}
 
+    
+	@Override
+    public String visitBlockHeader(Class cls, ALEParser ast) throws InvalidGrammarException { return "";}
+	@Override
+    public String visitBlockFooter(Class cls, ALEParser ast) throws InvalidGrammarException { return "";}
+
 	@Override
 	public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException {
 		return "bool ClusteredTree::visit_" + cls.getName().toLowerCase() + "_" + visitNum 
@@ -307,7 +313,7 @@ public class FlatCppGenerator implements Backend {
 	}
 
 	@Override
-	public String closeChildLoop() {
+	public String closeChildLoop(String loopVar) {
 		return "  } SFORLOOPALIAS_FLATCPP_END();\n";
 	}
 

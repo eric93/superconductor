@@ -1406,7 +1406,7 @@ public String openChildLoop(AGEval.Class parent_class, String loopVar, ALEParser
 }
 
 
-public String closeChildLoop() {
+public String closeChildLoop(String loopVar) {
 	return "  } SFORLOOPALIASEND();";
 }
 
@@ -1442,6 +1442,9 @@ public String childRecur(AGEval.Class cls, String childName, int visitNum) {
 	//String childLoc = "*(&s + s.distanceToLeftmostChild + computeData.classData.Sub" + cls.getName() + ".child_" + childName + ")";
 	//return "visit_" + visitNum + "(VISITARGS(" + childLoc + ", root, &s)); //recur\n";					
 }
+
+public String visitBlockHeader(Class cls, ALEParser ast) throws InvalidGrammarException { return "";}
+public String visitBlockFooter(Class cls, ALEParser ast) throws InvalidGrammarException { return "";}
 
 public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException {
 	String res = "";

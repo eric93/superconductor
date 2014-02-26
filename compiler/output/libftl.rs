@@ -1,47 +1,38 @@
-use std::hashmap::HashMap;
-use std::util;
+use std::cast;
 
-
-pub enum NodeType {
-    midnode,
-    leaf,
-}
-
-pub struct FtlNode<'a>{
-    id : int,
-    ty: NodeType,
-    attribs: HashMap<&'a str,int>,
-    kids: ~[FtlNode<'a>],
-}
-
-impl<'a> FtlNode<'a> {
-    pub fn setAttrib(&mut self, attr: &'a str, value: int) {
-        self.attribs.insert_or_update_with(attr, value, |_,v| { *v = value });
-    }
-    pub fn getAttrib(&self, attr: &'a str) -> int {
-        match self.attribs.find_copy(&attr) {
-            Some(a) => a,
-            _ => fail!("Attribute not found: " + attr)
-        }
-    }
-    pub fn with_kids(&mut self, func: |&mut FtlNode<'a>, &mut FtlNode<'a>|) {
-        let mut kids = util::replace(&mut self.kids, ~[]);
-        for child in kids.mut_iter() {
-            func(self, child);
-        }
-        util::replace(&mut self.kids, kids);
+pub fn base<'a,I>(node: &'a mut FtlNode) -> &'a mut I {
+    unsafe {
+        let (_, ptr) : (uint, uint) = cast::transmute(node);
+        cast::transmute(ptr)
     }
 }
 
-macro_rules! setAttr(
-    ($n:ident,$attr:expr,$v:expr) => (let x = $v; $n.setAttrib($attr,x);)
-)
+pub fn inherit(visit: |&mut FtlNode|, node: &mut FtlNode) {
+    visit(node);
+    node.with_all_children(|child| {
+        inherit(|node: &mut FtlNode| visit(node), child);
+    });
+}
+
+pub fn synthesize(visit: |&mut FtlNode|,node: &mut FtlNode) {
+    node.with_all_children(|child| {
+        synthesize(|node: &mut FtlNode| visit(node), child);
+    });
+    visit(node);
+}
 
 pub fn log(logstr: &str){
     println!("{:s}",logstr)
 }
 
-pub fn createNode<'a>(id: int, ty: NodeType, children: ~[FtlNode<'a>]) -> FtlNode<'a> {
+pub trait FtlNode {
+    fn with_all_children(&mut self, func: |&mut FtlNode|);
+    fn visit_0(&mut self);
+    fn visit_1(&mut self);
+}
+
+
+fn createNode<'a>(id: int, ty: NodeType, children: ~[FtlNode<'a>]) -> FtlNode<'a> {
     let mut node = FtlNode{
         id: id,
         ty: ty,
@@ -54,22 +45,11 @@ pub fn createNode<'a>(id: int, ty: NodeType, children: ~[FtlNode<'a>]) -> FtlNod
 }
 
 pub fn generateTree<'a>() -> FtlNode<'a> {
-    let leafs1 = ~[createNode(1,leaf,~[]),createNode(2,leaf,~[]),createNode(3,leaf,~[])];
-    let leafs2 = ~[createNode(4,leaf,~[]),createNode(5,leaf,~[])];
+    let leafs1 = ~[Leaf{base: Node{num: 0}, numin: 1, id: 1},Leaf{base: Node{num: 0}, numin: 2, id: 2},Leaf{base: Node{num: 0}, numin: 3, id: 3}];
+    let leafs2 = ~[Leaf{base: Node{num: 0}, numin: 4, id: 4},Leaf{base: Node{num: 0}, numin: 5, id: 5}]
+
+    let parents = ~[MidNode{base: Node{num: 0}, kids: leafs1, id: 6},MidNode{base: Node{num: 0}, kids: leafs2, id: 7}]
     let parents = ~[createNode(6,midnode,leafs1),createNode(7,midnode,leafs2)];
+    MidNode{base: Node{num: 0}, kids: parents, id: 8};
     createNode(8,midnode,parents)
-}
-
-pub fn inherit(visit: |&mut FtlNode|,node: &mut FtlNode) {
-    visit(node);
-    for child in node.kids.mut_iter() {
-        inherit(|node| visit(node),child);
-    }
-}
-
-pub fn synthesize(visit: |&mut FtlNode|, node: &mut FtlNode) {
-    for child in node.kids.mut_iter() {
-        synthesize(|node| visit(node),child);
-    }
-    visit(node);
-}
+}*/

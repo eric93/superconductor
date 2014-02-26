@@ -561,13 +561,18 @@ public class AbstractGenerator implements GeneratorI {
 		//res += "\nStencil order: ";
 		//for (String dir : directions) res += dir + " ";
 		//res += "\n";
-		for (HashMap<AGEval.Class, String>  pass : visits) {
-			res += "///// pass /////\n";
-			for (String visit : pass.values()) { 
-				res += visit; 
-			}
-		}
-		
+
+        if (numVisits == 0){
+            return "";
+        }
+
+        for (AGEval.Class cls : visits.get(0).keySet()) {
+            res += backend.visitBlockHeader(cls, sched._ast);
+            for (HashMap<AGEval.Class, String>  pass : visits) {
+                res += pass.get(cls);
+            }
+            res += backend.visitBlockFooter(cls, sched._ast);
+        }
 		return res;
 	}
 	
@@ -675,7 +680,7 @@ public class AbstractGenerator implements GeneratorI {
 				}
 			}
 		}
-		String res = (hasAnyToCopy ? transfer : "") + mainBody + backend.closeChildLoop() + "\n";	
+		String res = (hasAnyToCopy ? transfer : "") + mainBody + backend.closeChildLoop(loopVar) + "\n";	
 		soFar.put(cls, soFar.get(cls) + res);
 	}
 	

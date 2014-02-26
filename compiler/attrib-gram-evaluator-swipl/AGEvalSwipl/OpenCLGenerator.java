@@ -305,6 +305,12 @@ public class OpenCLGenerator implements Backend {
 		return contents.toString();
 	}
 
+
+	@Override
+    public String visitBlockHeader(Class cls, ALEParser ast) throws InvalidGrammarException { return "";}
+	@Override
+    public String visitBlockFooter(Class cls, ALEParser ast) throws InvalidGrammarException { return "";}
+
 	@Override
 	public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException {
 		StringBuilder contents = new StringBuilder();
@@ -347,7 +353,7 @@ public class OpenCLGenerator implements Backend {
 	}
 
 	@Override
-	public String closeChildLoop() {
+	public String closeChildLoop(String loopVar) {
 		return "  } SFORLOOPALIAS_OCL_END();";
 	}
 

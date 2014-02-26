@@ -24,10 +24,12 @@ public interface Backend {
 	  //public String logExpr(int indentSrc, int indentOut, String msg, String rhs);
 	  public String printCurrentPipelineBuild (Hashtable<Variable, Term> binding) throws InvalidGrammarException;
 	  public String functionHeader(ALEParser.Assignment assign, ALEParser ast) throws InvalidGrammarException;
+      public String visitBlockHeader(Class cls, ALEParser ast) throws InvalidGrammarException;
+      public String visitBlockFooter(Class cls, ALEParser ast) throws InvalidGrammarException;
 	  public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException;	  
 	  public String visitFooter(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException;	  
 	  public String openChildLoop (AGEval.Class parent_class, String loopVar, ALEParser ast);
-	  public String closeChildLoop ();
+	  public String closeChildLoop (String loopVar);
 	  public String openLastChild(AGEval.Class cls, String loopVar);
 	  public String closeLastChild();
 	  public String childrenRecur (AGEval.Class cls, String childName, int visitNum, ALEParser ast) throws InvalidGrammarException;
