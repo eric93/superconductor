@@ -55,7 +55,7 @@ public class RustGenerator extends BackendBase implements Backend {
     public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException {
         String res =
             "fn visit_" + cls.getName().toLowerCase() + "_" + visitNum + "(node: &mut Flow) {\n"
-            + logStmt(2, 2, "visit " + " " + cls.getName() + " (id: \" + base(node).id.to_str() + \")", "\"" + visitNum + "\"");
+            + logStmt(2, 2, "visit " + " " + cls.getName() + " (children: \" + base(node).children.len().to_str() + \")", "\"" + visitNum + "\"");
         return res;
     }
 
@@ -461,7 +461,7 @@ public class RustGenerator extends BackendBase implements Backend {
             "#[feature(globs, macro_rules)];\n"+
             "use layout::libftl::*;\n" +
             "use layout::block::BlockFlow; use layout::inline::InlineFlow;\n" +
-            "use layout::flow::{Flow, FlowLeafSet, BlockFlowClass, InlineFlowClass, ImmutableFlowUtils, MutableFlowUtils, MutableOwnedFlowUtils, base};\n" +
+            "use layout::flow::{Flow, BlockFlowClass, InlineFlowClass, ImmutableFlowUtils, MutableFlowUtils, MutableOwnedFlowUtils, base};\n" +
             "use layout::flow::{FlowTraversal, PostorderTraversalType, PreorderTraversalType};\n";
         res += fHeaders;
         res += visitOut;
