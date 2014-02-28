@@ -4,19 +4,16 @@ interface BaseFlow {
     var bottom : int;
 }
 
-interface Box {
-    input style : int;
-    var position : int;
-}
-
 class BlockFlow : BaseFlow {
-    children {box_ : Box; flow_children : [BaseFlow]; }
+    children { flow_children : [BaseFlow]; }
     attributes {
         var childs_height : int;
         var my_height : int;
+        var box_ : int;
+        input style : int;
     }
     actions {
-        my_height := getHeight(box_.style);
+        my_height := getHeight(style);
         
         loop flow_children {
             childs_height := fold 0 .. $-.childs_height + rectHeight(flow_children$i.position);
@@ -29,7 +26,7 @@ class BlockFlow : BaseFlow {
         }
 
         height := (my_height == Au(0)) ? childs_height : my_height;
-        box_.position := position;
+        box_ := boxVal(position);
 
     }
 
@@ -42,5 +39,3 @@ class InlineFlow : BaseFlow {
 
 }
 
-class GenericBox : Box {
-}

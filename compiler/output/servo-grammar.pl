@@ -1,28 +1,21 @@
 interface(baseflow).
-interface(box).
 interfaceAttribute(baseflow, position).
 interfaceAttribute(baseflow, height).
 interfaceAttribute(baseflow, bottom).
-interfaceAttribute(box, position).
 class(blockflow, baseflow).
 class(inlineflow, baseflow).
-class(genericbox, box).
 classChild(blockflow, flowuscorechildrenunroll0, baseflow).
 classChild(blockflow, flowuscorechildrenunroll1, baseflow).
 classChild(blockflow, flowuscorechildrenunroll2, baseflow).
 classChild(blockflow, flowuscorechildrenunrolln, baseflow).
-classChild(blockflow, boxuscore, box).
 classField(gensymattrib, gensymattrib) :- false.
 classField(blockflow, gensymattrib).
+classField(blockflow, style).
 classField(inlineflow, gensymattrib).
-classField(genericbox, gensymattrib).
 interfaceField(baseflow, display).
 interfaceField(baseflow, refname).
-interfaceField(box, style).
-interfaceField(box, display).
-interfaceField(box, refname).
-assignment(blockflow, boxuscore, position, self, position). %a42
-assignment(blockflow, self, myuscoreheight, boxuscore, style). %a42
+assignment(blockflow, self, boxuscore, self, position). %a42
+assignment(blockflow, self, myuscoreheight, self, style). %a42
 assignment(blockflow, self, height, self, myuscoreheight). %a42
 assignment(blockflow, self, height, self, childsuscoreheight). %a42
 assignment(blockflow, self, flowuscorechildren_position_step0, self, flowuscorechildren_height_step0). %a8
@@ -74,6 +67,7 @@ assignment(inlineflow, self, height, self, gensymattrib). %a40
 assignment(gensymattrib, gensymattrib, gensymattrib, gensymattrib, gensymattrib) :- false.
 classAttribute(blockflow, myuscoreheight). %s1
 classAttribute(blockflow, childsuscoreheight). %s1
+classAttribute(blockflow, boxuscore). %s1
 classAttribute(blockflow, flowuscorechildren_height_step0). %s2 flowuscorechildren@height
 classAttribute(blockflow, flowuscorechildren_height_step1). %s3
 classAttribute(blockflow, flowuscorechildren_height_step2). %s4

@@ -91,7 +91,7 @@ public class RustGenerator extends BackendBase implements Backend {
         String ret = "";
         ret += "let mut children = util::replace(&mut self." + loopVar + ", ~[]);\n";
         ret += "  for child in children.mut_iter() {\n";
-        ret += "      let child: &mut " + iface.getName() + "  = base(*child);\n";
+        ret += "      let child: &mut " + iface.getName() + "  = base(as_ftl_node(child));\n";
         return ret;
     }
 	
@@ -133,7 +133,16 @@ public class RustGenerator extends BackendBase implements Backend {
 		return logStmt(indentSrc, indentOut, msg, rhsAddress+ ".to_str()");
 	}
 	
-	public String asgnE(String lhs, String rhs) { return lhs + rhs + ")"; }
+	public String asgnE(String lhs, String rhs) { 
+        if (!lhs.substring(0,2).equals("\n\n"))
+            return lhs + rhs + ")"; 
+        
+        // If lhs begins with two newlines, that means it's a loop temporary.
+        int end = lhs.indexOf("$\n");
+
+        return lhs.substring(end+2) + rhs + ");\n" + lhs.substring(2,end);
+
+    }
     //TODO(eatkinson): why is this never called?
 	public String asgnS(String lhs, String rhs) { //return asgnE(lhs, rhs) + ";/*asgnS*/\n"; 
         return "";
@@ -176,7 +185,9 @@ public class RustGenerator extends BackendBase implements Backend {
 	  	} else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
             // Children arrays are all assigned to inside loops, so child will be in scope.
             // We need to assigne to child_prop_last as well, becuase thats where $- is expected next time.
-            return child + "_" + propClean + "_last = " + "child." + propClean + " = (";
+            // Signal this by prepending "\n\nloop_var$\n"
+            return "\n\n" + child + "_" + propClean + "_last = " + "child." + propClean + "$\n" + 
+                "child." + propClean + " = (";
         } else {
             return "self." + childClean + "." + propClean + " = (";
 	  	}

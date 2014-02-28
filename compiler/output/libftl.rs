@@ -1,4 +1,5 @@
 use std::cast;
+use flow::Flow;
 
 pub fn base<'a,I>(node: &'a mut FtlNode) -> &'a mut I {
     unsafe {
@@ -31,25 +32,9 @@ pub trait FtlNode {
     fn visit_1(&mut self);
 }
 
-
-fn createNode<'a>(id: int, ty: NodeType, children: ~[FtlNode<'a>]) -> FtlNode<'a> {
-    let mut node = FtlNode{
-        id: id,
-        ty: ty,
-        attribs: HashMap::new(),
-        kids: children
-    };
-
-    node.attribs.insert("numin",id);
-    node
+pub fn as_ftl_node<'a>(flow: &'a mut Flow) -> &'a mut FtlNode {
+    match flow.class() {
+        BlockFlowClass => flow.as_block() as &'a mut FtlNode,
+        InlineFlowClass => flow.as_inline() as &'a mut FtlNode,
+    }
 }
-
-pub fn generateTree<'a>() -> FtlNode<'a> {
-    let leafs1 = ~[Leaf{base: Node{num: 0}, numin: 1, id: 1},Leaf{base: Node{num: 0}, numin: 2, id: 2},Leaf{base: Node{num: 0}, numin: 3, id: 3}];
-    let leafs2 = ~[Leaf{base: Node{num: 0}, numin: 4, id: 4},Leaf{base: Node{num: 0}, numin: 5, id: 5}]
-
-    let parents = ~[MidNode{base: Node{num: 0}, kids: leafs1, id: 6},MidNode{base: Node{num: 0}, kids: leafs2, id: 7}]
-    let parents = ~[createNode(6,midnode,leafs1),createNode(7,midnode,leafs2)];
-    MidNode{base: Node{num: 0}, kids: parents, id: 8};
-    createNode(8,midnode,parents)
-}*/

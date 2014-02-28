@@ -3,10 +3,6 @@
       "baseflow": {
           "vars": ["position", "height", "bottom"],
           "inputs": ["display", "refname"]
-        },
-      "box": {
-          "vars": ["position"],
-          "inputs": ["style", "display", "refname"]
         }
     },
     "traits": {
@@ -14,16 +10,11 @@
     "classes": {
       "blockflow": {
           "interface": "baseflow",
-          "vars": ["my_height", "childs_height"],
-          "inputs": []
+          "vars": ["my_height", "childs_height", "box_"],
+          "inputs": ["style"]
         },
       "inlineflow": {
           "interface": "baseflow",
-          "vars": [],
-          "inputs": []
-        },
-      "genericbox": {
-          "interface": "box",
           "vars": [],
           "inputs": []
         }
