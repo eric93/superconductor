@@ -89,16 +89,20 @@ public class RustGenerator extends BackendBase implements Backend {
         AGEval.IFace iface = parent_class.getChildMappings().get(loopVar);
 
         String ret = "";
-        ret += "let mut children = util::replace(&mut self." + loopVar + ", ~[]);\n";
-        ret += "  for child in children.mut_iter() {\n";
+        ret += "{\n";
+        ret += "    let mut children = util::replace(&mut self." + loopVar + ", ~[]);\n";
+        ret += "    let mut first = true;\n";
+        ret += "    for child in children.mut_iter() {\n";
         ret += "      let child: &mut " + iface.getName() + "  = base(as_ftl_node(child));\n";
         return ret;
     }
 	
 	public String closeChildLoop(String loopVar) {
         String ret = "";
+        ret += "      first = false;\n";
+        ret += "    }\n";
+        ret += "    self." + loopVar + " = children;\n";
         ret += "  }\n";
-        ret += "  self." + loopVar + " = children;";
         return ret;
 	}
 
