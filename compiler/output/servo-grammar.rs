@@ -9,7 +9,7 @@ fn blockflow_box__position ( _ale_arg0: Au) -> Au { _ale_arg0 }
 //@type action
 fn blockflow_my_height ( _ale_arg0: Au) -> Au { getHeight(_ale_arg0) }
 //@type action
-fn blockflow_height ( _ale_arg0: Au,  _ale_arg1: Au) -> Au { (_ale_arg0 == Au(0)) ? _ale_arg1 : _ale_arg0 }
+fn blockflow_height ( _ale_arg0: Au,  _ale_arg1: Au) -> Au { if ((_ale_arg0 == Au(0))) {_ale_arg1} else {_ale_arg0} }
 impl FtlNode for GenericBox{
  fn with_all_children(&mut self, func: |&mut FtlNode|) {
  }
@@ -71,7 +71,7 @@ impl FtlNode for BlockFlow{
   log("    last init flow_children_bottom_last: " + self.base.flow_children_bottom_last.to_str());
   let mut children = util::replace(&mut self.flow_children, ~[]);
   for child in children.mut_iter() {
-    let child: &mut BaseFlow  = base(*child);
+      let child: &mut BaseFlow  = base(*child);
       flow_children_bottom_last = child.bottom = ((if first { flow_children_bottom_init } else { flow_children_bottom_last } + child.height ));
       log("         step flow_children@bottom: " + child.bottom.to_str());
   }
@@ -87,7 +87,7 @@ impl FtlNode for BlockFlow{
   log("    last init childs_height: " + self.childs_height.to_str());
   let mut children = util::replace(&mut self.flow_children, ~[]);
   for child in children.mut_iter() {
-    let child: &mut BaseFlow  = base(*child);
+      let child: &mut BaseFlow  = base(*child);
       flow_children_position_last = child.position = ((Rect(Au(0), child.bottom - child.height, Au(100), child.height)));
       log("         step flow_children@position: " + child.position.to_str());
       self.childs_height = ((self.base.childs_height + rectHeight(child.position)));

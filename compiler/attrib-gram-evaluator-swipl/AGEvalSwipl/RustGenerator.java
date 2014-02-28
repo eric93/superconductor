@@ -42,18 +42,15 @@ public class RustGenerator extends BackendBase implements Backend {
 					isFirst = false;
 				}
 			
-			params +=  " " + assign._variables.get(arg) + ": int";
+			params +=  " " + assign._variables.get(arg) + ": Au";
 		}
 		params += ")";
 		return "//@type action\n" +
-			"fn " + fName + " " + params + " -> int { " + replaceTypeVals(assign._indexedBody, ast) + " }\n";
+			"fn " + fName + " " + params + " -> Au { " + replaceTypeVals(assign._indexedBody, ast) + " }\n";
 	}
 	
     public String visitBlockHeader(Class cls, ALEParser ast) throws InvalidGrammarException {
         ArrayList<AGEval.IFace> child_ifaces = new ArrayList<AGEval.IFace>();
-
-        if (child_ifaces.size() > 1)
-            throw new InvalidGrammarException("Rust backend does not yet support classes with more than one child array");
 
         for(AGEval.IFace child_iface : cls.getChildMappings().values()){
             child_ifaces.add(child_iface);
@@ -92,9 +89,9 @@ public class RustGenerator extends BackendBase implements Backend {
         AGEval.IFace iface = parent_class.getChildMappings().get(loopVar);
 
         String ret = "";
-        ret += "  let mut children = util::replace(&mut self." + loopVar + ", ~[]);\n";
+        ret += "let mut children = util::replace(&mut self." + loopVar + ", ~[]);\n";
         ret += "  for child in children.mut_iter() {\n";
-        ret += "  let child: &mut " + iface.getName() + "  = base(*child);\n";
+        ret += "      let child: &mut " + iface.getName() + "  = base(*child);\n";
         return ret;
     }
 	
@@ -160,9 +157,11 @@ public class RustGenerator extends BackendBase implements Backend {
 	  	String childClean = child.toLowerCase();
 	  	String propClean = prop.toLowerCase();
 
-        // Initial loop values are local variables.
+        // Initial and final loop values are local variables.
         if (propClean.contains("_init")) {
             return "let " + propClean + " = (";
+        } else if (propClean.contains("_last")) {
+            return "let mut " + propClean + " = (";
         }
 
 	  	if (isParent) {
@@ -176,7 +175,8 @@ public class RustGenerator extends BackendBase implements Backend {
                 return "self." + propClean + " = (";
 	  	} else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
             // Children arrays are all assigned to inside loops, so child will be in scope.
-            return "child." + propClean + " = (";
+            // We need to assigne to child_prop_last as well, becuase thats where $- is expected next time.
+            return child + "_" + propClean + "_last = " + "child." + propClean + " = (";
         } else {
             return "self." + childClean + "." + propClean + " = (";
 	  	}
@@ -259,7 +259,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + cleanProp;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return "if first { " + child + "_" + cleanProp + "_init } else { child." + cleanProp + "_last }";
+                return "if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last }";
             else
                 throw new InvalidGrammarException("Cannot access $- attrib of " + 
                         "a non-multi child / self reduction: " + lhs);
@@ -275,10 +275,9 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + cleanProp;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                throw new InvalidGrammarException("Cannot access non-loop attrib of multichild.");
+                return "child." + cleanProp;
             else
-                throw new InvalidGrammarException("Cannot access non-loop attrib of " + 
-                        "a non-multi child / self reduction: " + lhs);
+                return "self." + child + "." + cleanProp;
         }
     }
 	
@@ -396,12 +395,7 @@ public class RustGenerator extends BackendBase implements Backend {
 		String res = "extern mod libftl;\n" +
             "use libftl::{base,Node,log,MidNode,Leaf,inherit,synthesize};\n"+ 
             "use std::int::to_str_bytes;\n" + 
-            "use std::util;\n" +
-            "trait FtlNode {\n" +
-            "  fn with_all_children(&mut self, func: |&mut FtlNode|);\n" +
-            "  fn visit_0(&mut self);\n" + 
-            "  fn visit_1(&mut self);\n" + 
-            "}\n";
+            "use std::util;\n";
 
 		res += fHeaders;		
 		res += visitOut;
