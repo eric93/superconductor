@@ -1,4 +1,4 @@
-
+*~
 .DS_Store
 /compiler/AleAntlr3Grammar/aleGrammar/ALELexer.java
 /compiler/AleAntlr3Grammar/aleGrammar/ALEParser.java
@@ -17,3 +17,7 @@
 /compiler/*.tokens
 *.class
 /superconductorjs/node_modules/
+/compiler/local.properties
+/compiler/output/simple-test*
+/compiler/output/liblibftl*.dylib
+/compiler/tmp-output
