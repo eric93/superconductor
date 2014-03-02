@@ -20,6 +20,26 @@ import jpl.Variable;
 
 public class RustGenerator extends BackendBase implements Backend {
 
+    private static boolean GENERATE_LOG = false; // Toggle flag to generate log statements
+
+    private Hashtable<String, String> nameLookup;
+
+    public RustGenerator() {
+        nameLookup = new Hashtable<String, String>();
+        nameLookup.put("height", "position.size.height");
+        nameLookup.put("flowchildren", "base.children");
+    }
+
+    private String servoVal(String val) {
+        val = val.toLowerCase();
+        if (nameLookup.containsKey(val)) {
+            return nameLookup.get(val);
+        } else {
+            return val;
+        }
+    }
+
+
     public String replaceTypeVals(String body, ALEParser ast) {
         String res = body;
         for (String t : ast.typeVals)
@@ -59,8 +79,8 @@ public class RustGenerator extends BackendBase implements Backend {
         String func = " fn with_all_children(&mut self, func: |&mut FtlNode|) {\n";
 
         for (AGEval.IFace child_iface : child_ifaces) {
-            func += "  for child in self." + cls.getChildNamesForType(child_iface).get(0) + ".mut_iter() {\n";
-            func += "    func(*child);\n";
+            func += "  for child in self." + servoVal(cls.getChildNamesForType(child_iface).get(0)) + ".mut_iter() {\n";
+            func += "    func(as_ftl_node(child));\n";
             func += "  }\n";
         }
 
@@ -87,30 +107,25 @@ public class RustGenerator extends BackendBase implements Backend {
     public String openChildLoop (AGEval.Class parent_class, String loopVar, ALEParser ast) {
 
         AGEval.IFace iface = parent_class.getChildMappings().get(loopVar);
-
-        String ret = "";
-        ret += "{\n";
-        ret += "    let mut children = util::replace(&mut self." + loopVar + ", ~[]);\n";
-        ret += "    let mut first = true;\n";
-        ret += "    for child in children.mut_iter() {\n";
-        ret += "      let child: &mut " + iface.getName() + "  = base(as_ftl_node(child));\n";
+        //System.out.println("Loopvar: " + loopVar);
+        String ret = "let mut children = util::replace(&mut self." + servoVal(loopVar) + ", FlowList::new());\n";
+        ret += "  let mut first = true;\n";
+        ret += "  for child in children.mut_iter() {\n";
+        ret += "    let child = mut_base(child);\n";
         return ret;
     }
 
     public String closeChildLoop(String loopVar) {
         String ret = "";
-        ret += "      first = false;\n";
-        ret += "    }\n";
-        ret += "    self." + loopVar + " = children;\n";
+        ret += "    first = false;\n";
         ret += "  }\n";
+        ret += "  self." + servoVal(loopVar) + " = children;\n";
         return ret;
     }
 
 
     public String printCurrentPipelineBuild (Hashtable<Variable, Term> binding) throws InvalidGrammarException {
-        String res = "fn main() {\n"+
-            "    layout(&mut generateTree());\n}\n" +
-            "fn layout (root: &mut FtlNode) {\n";
+        String res = "pub fn layout (root: &mut FtlNode) {\n";
         int pass = 0;
         for (Term visit : binding.get("P").toTermArray()) {
             String stencil = visit.arg(2).arg(1).toString();
@@ -125,6 +140,9 @@ public class RustGenerator extends BackendBase implements Backend {
 
 
     public String logStmt(int indentSrc, int indentOut, String msg, String rhs) {
+        if (! GENERATE_LOG) {
+            return "";
+        }
         String res = "";
         for (int i = 0; i < indentSrc; i++) res += " ";
         res += "log(\"";
@@ -168,7 +186,9 @@ public class RustGenerator extends BackendBase implements Backend {
             prop = lhs;
         }
         String childClean = child.toLowerCase();
-        String propClean = prop.toLowerCase();
+        String propClean = servoVal(prop.toLowerCase());
+
+        child = child.toLowerCase();
 
         // Initial and final loop values are local variables.
         if (propClean.contains("_init")) {
@@ -249,10 +269,16 @@ public class RustGenerator extends BackendBase implements Backend {
         }
 
         String originalProp = prop.replace("$$", "").replace("$i","").replace("$-", "").replace("[-1]", "");
-        String cleanProp = originalProp.toLowerCase();
+        String cleanProp = servoVal(originalProp.toLowerCase());
 
-        if (isParent && !cleanProp.contains("_init") && !(cls.getPrivAttributes().containsKey(prop) || cls.hasField(prop)))
-            cleanProp = "base." + cleanProp;
+        // TODO: this doesn't work properly right now,
+        // generates .base for non-interface variables
+        //
+        // if (isParent && !cleanProp.contains("_init") && !(cls.getPrivAttributes().containsKey(prop) || cls.hasField(prop))) {
+        //     cleanProp = "base." + cleanProp;
+        // }
+
+        child = child.toLowerCase();
 
         // Special cases for loop elements
         if (prop.contains("$$")) {
@@ -366,7 +392,8 @@ public class RustGenerator extends BackendBase implements Backend {
 
 
     public String visitDispatcher(int visit, AGEvaluator aleg, HashSet<AGEval.Class> buIns, HashSet<AGEval.Class> bus) {
-        return "";
+        // Generates visits for FtlNode trait
+        return "  fn visit_" + visit + "(&mut self);\n";
     }
 
 
@@ -407,14 +434,28 @@ public class RustGenerator extends BackendBase implements Backend {
     public String output(String baseName, String visitOut, String visitDispatches, String outputDir, boolean write,
                          boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Hashtable<Variable, Term> binding, AGEvaluator aleg) throws IOException,
                                                                                                                                                       InvalidGrammarException {
-        String res = "extern mod libftl;\n" +
-            "use libftl::{base,Node,log,MidNode,Leaf,inherit,synthesize};\n"+
+        String res = "#[feature(globs)]\n" +
+            "use layout::ftl_lib::*;\n" +
+            "use layout::block::BlockFlow;\n" +
+            "use layout::inline::InlineFlow;\n" +
+            "use layout::box_::Box;\n" +
+            "use layout::flow::{BaseFlow, Flow, ImmutableFlowUtils, MutableFlowUtils, MutableOwnedFlowUtils, mut_base};\n" +
+            "use layout::flow_list::{FlowList};\n" +
+            "use style::{ComputedValues};\n" +
+            "use geom::{Point2D, Rect, SideOffsets2D, Size2D};\n" +
+            "use servo_util::geometry::Au;\n" +
+            "use extra::arc::Arc;\n" +
             "use std::int::to_str_bytes;\n" +
-            "use std::util;\n";
+            "use std::util;\n\n";
+
+        res += "pub trait FtlNode {\n";
+        res += "  fn with_all_children(&mut self, func: |&mut FtlNode|);\n";
+        res += visitDispatches;
+        res += "}\n\n";
 
         res += fHeaders;
         res += visitOut;
-        res += visitDispatches;
+
         res += printCurrentPipelineBuild(binding);
 
         AGEvaluatorSwipl.writeFile(outputDir + File.separator + baseName +".rs", res);

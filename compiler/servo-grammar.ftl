@@ -5,37 +5,33 @@ interface BaseFlow {
 }
 
 class BlockFlow : BaseFlow {
-    children { flow_children : [BaseFlow]; }
+    children { flowChildren : [BaseFlow]; }
     attributes {
         var childs_height : int;
         var my_height : int;
-        var box_ : int;
-        input style : int;
+        input box_ : Box;
     }
     actions {
-        my_height := getHeight(style);
-        
-        loop flow_children {
-            childs_height := fold 0 .. $-.childs_height + rectHeight(flow_children$i.position);
-            flow_children.bottom := fold 1 .. flow_children$-.bottom + flow_children$i.height;
+        my_height := getHeight(box_);
+        loop flowChildren {
+            childs_height := fold Au(0) .. $-.childs_height + rectHeight(flowChildren$i.position);
+            flowChildren.bottom := fold Au(1) .. flowChildren$-.bottom + flowChildren$i.height;
 
-            flow_children.position := fold 0 .. Rect(Au(0), 
-                                                       flow_children$i.bottom - flow_children$i.height,
-                                                       Au(100),
-                                                       flow_children$i.height);
+            flowChildren.position := fold makeRect(Au(0), Au(0), Au(0), Au(0)) ..
+                                           makeRect(Au(0),
+                                                    flowChildren$i.bottom - flowChildren$i.height,
+                                                    Au(100),
+                                                    flowChildren$i.height);
         }
 
         height := (my_height == Au(0)) ? childs_height : my_height;
-        box_ := boxVal(position);
-
     }
 
 }
 
 class InlineFlow : BaseFlow {
     actions {
-        height := 0;
+        height := Au(0);
     }
 
 }
-
