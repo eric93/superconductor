@@ -18,6 +18,8 @@
 *.class
 /superconductorjs/node_modules/
 /compiler/local.properties
+/compiler/tmp-output
 /compiler/output/simple-test*
 /compiler/output/liblibftl*.dylib
-/compiler/tmp-output
+/compiler/output/servo-grammar.*
+/compiler/output/simple-test.*
