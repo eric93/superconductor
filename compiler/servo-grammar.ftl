@@ -7,10 +7,9 @@
 // data structure after compilation
 
 interface BaseFlow {
-    var position : int;
-    var height : int;
+    var position : Rect;
+    var height : Au;
     var width : int;
-    var bottom : int;
 }
 
 class BlockFlow : BaseFlow {
@@ -29,8 +28,8 @@ class BlockFlow : BaseFlow {
 
         loop flowChildren {
             childsHeight := fold Au(0) .. $-.childsHeight + rectHeight(flowChildren$i.position);
-            flowChildren.bottom := fold Au(1) .. flowChildren$-.bottom + flowChildren$i.height;
-            flowChildren.position := fold makeRect(Au(0), Au(0), Au(0), Au(0)) ..
+            flowChildren.bottom := fold NewAu(1) .. flowChildren$-.bottom + flowChildren$i.height;
+            flowChildren.position := fold makeRect(NewAu(0), NewAu(0), NewAu(0), NewAu(0)) ..
                                           makeRect(Au(0),
                                                    flowChildren$i.bottom - flowChildren$i.height,
                                                    Au(10000),
@@ -46,7 +45,7 @@ class BlockFlow : BaseFlow {
 
 class InlineFlow : BaseFlow {
     actions {
-        height := Au(0);
+        height := NewAu(0);
         width := Au(0);
     }
 }

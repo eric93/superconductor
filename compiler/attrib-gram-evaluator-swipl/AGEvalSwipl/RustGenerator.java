@@ -227,6 +227,17 @@ public class RustGenerator extends BackendBase implements Backend {
         return "";
     }
 
+    // Translate accessor paths so they line up with Servo's
+    String lhsServoTranslate(String lhsOrig) {
+        return lhsOrig;
+    }
+    String rhsServoTranslate(String rhsOrig) {
+        if (rhsOrig.equals("self.boxuscore")){
+            return "&self.boxuscore";
+        }
+        return rhsOrig;
+    }
+
 
     private String toBaseVal(Class cls, String prop, String propClean) {
         if (!(cls.getAttrsLowercase().contains(prop.toLowerCase())
@@ -257,12 +268,13 @@ public class RustGenerator extends BackendBase implements Backend {
         String propClean = prop.toLowerCase();
 
         child = child.toLowerCase();
+        String ret;
 
         // Initial and final loop values are local variables.
         if (propClean.contains("_init")) {
-            return "let " + propClean + " = (";
+            ret =  "let " + propClean + " = (";
         } else if (propClean.contains("_last")) {
-            return "let mut " + propClean + " = (";
+            ret =  "let mut " + propClean + " = (";
         }
 
         if (isParent) {
@@ -278,6 +290,8 @@ public class RustGenerator extends BackendBase implements Backend {
         } else {
             return "self." + childClean + "." + servoVal(propClean) + " = (";
         }
+
+        return lhsServoTranslate(ret);
     }
 
 
@@ -342,6 +356,7 @@ public class RustGenerator extends BackendBase implements Backend {
         // }
 
         child = child.toLowerCase();
+        String ret;
 
         String baseval = toBaseVal(cls, originalProp, cleanProp);
 
@@ -350,7 +365,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + servoVal(cleanProp);
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return child + "_" + cleanProp;
+                ret =  child + "_" + cleanProp;
             else
                 throw new InvalidGrammarException("Cannot access $$ attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -365,7 +380,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + servoVal(cleanProp);
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return "if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last }";
+                ret =  "if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last }";
             else
                 throw new InvalidGrammarException("Cannot access $- attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -374,7 +389,7 @@ public class RustGenerator extends BackendBase implements Backend {
         } else {
             // Initial loop values are local variables.
             if (cleanProp.contains("_init")) {
-                return cleanProp;
+                ret =  cleanProp;
             }
 
             // We can assume here that the attribute is not a special loop construct.
@@ -385,6 +400,7 @@ public class RustGenerator extends BackendBase implements Backend {
             else
                 return "self." + child + "." + baseval;
         }
+        return rhsServoTranslate(ret);
     }
 
     public String toAcc(String lhsRaw, AGEval.Class c) {

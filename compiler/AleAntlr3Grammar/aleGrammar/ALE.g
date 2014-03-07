@@ -904,4 +904,4 @@ RBRACE : '}';
 COMMA : ',';
 
 id returns [String text] : c=IDRAW { $text = $c.text.replace("_", "uscore");  } ;
-IDRAW  :	('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'-')* ;
+IDRAW  :	('a'..'z'|'A'..'Z'|'_'|'&') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'-')* ;
