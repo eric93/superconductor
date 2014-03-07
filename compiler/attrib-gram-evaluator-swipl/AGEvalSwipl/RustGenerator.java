@@ -104,7 +104,7 @@ public class RustGenerator extends BackendBase implements Backend {
         //nothing
     }
 
-    public String functionHeader(ALEParser.Assignment assign, ALEParser ast) {
+    public String functionHeader(ALEParser.Assignment assign, ALEParser ast) throws InvalidGrammarException {
         String fName = assign._class.getName().toLowerCase() + "_" + assign._sink.replace('.','_').replace('@','_').replace("[-1]", "_init");
         String params = "(";
         boolean isFirst = true;
@@ -114,12 +114,15 @@ public class RustGenerator extends BackendBase implements Backend {
             } else {
                 isFirst = false;
             }
+            String type = Generator.extendedGet(ast, assign._class, arg).strType;
 
-            params +=  " " + assign._variables.get(arg) + ": Au";
+            params +=  " " + assign._variables.get(arg) + ": " + type;
         }
         params += ")";
+
+        String retType = Generator.extendedGet(ast, assign._class, assign._sink).strType;
         return "//@type action\n" +
-            "fn " + fName + " " + params + " -> Au { " + replaceTypeVals(assign._indexedBody, ast) + " }\n";
+            "fn " + fName + " " + params + " -> " + retType + " { " + replaceTypeVals(assign._indexedBody, ast) + " }\n";
     }
 
     public String visitBlockHeader(Class cls, ALEParser ast) throws InvalidGrammarException {
