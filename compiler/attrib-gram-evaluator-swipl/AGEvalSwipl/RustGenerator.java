@@ -2,6 +2,7 @@ package AGEvalSwipl;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.Map.Entry;
 import aleGrammar.ALEParser;
 import AGEval.AGEvaluator;
 import AGEval.Class;
+import AGEval.IFace;
 import AGEval.InvalidGrammarException;
 import AGEvalSwipl.AGEvaluatorSwipl.Schedule;
 
@@ -23,20 +25,71 @@ public class RustGenerator extends BackendBase implements Backend {
     private static boolean GENERATE_LOG = false; // Toggle flag to generate log statements
 
     private Hashtable<String, String> nameLookup;
+    private HashSet<String> ftlAttrs;
 
     public RustGenerator() {
         nameLookup = new Hashtable<String, String>();
         nameLookup.put("height", "position.size.height");
+        nameLookup.put("width", "position.size.width");
         nameLookup.put("flowchildren", "base.children");
+        nameLookup.put("boxheight", "box_.as_ref().unwrap().border_box.borrow_mut().get().size.height");
+        nameLookup.put("boxwidth",  "box_.as_ref().unwrap().border_box.borrow_mut().get().size.width");
+        nameLookup.put("boxstyleheight", "box_.as_ref().unwrap().style.get().Box.get().height");
+
+        // This can fail, better to use for-in loop in rust
+        nameLookup.put("box_", "box_.as_ref().unwrap()");
+        nameLookup.put("boxuscore", "boxuscore.as_ref().unwrap()");
+
+        ftlAttrs = new HashSet<String>();
+        ftlAttrs.add("bottom");
+        ftlAttrs.add("childsheight");
+        ftlAttrs.add("myheight");
+        ftlAttrs.add("render");
     }
 
     private String servoVal(String val) {
-        val = val.toLowerCase();
+        // Weird escaping...
+        val = val.toLowerCase().replace("uscore", "_");
+
         if (nameLookup.containsKey(val)) {
-            return nameLookup.get(val);
-        } else {
-            return val;
+            val =  nameLookup.get(val);
+        } else if (ftlAttrs.contains(val)) {
+            val =  "ftl_attrs." + val;
         }
+        return val.replace("_", "uscore");
+    }
+
+    private String generateFtlStruct(IFace iface) {
+        Set<String> attrs= iface.getAttrsLowercase();
+        attrs.retainAll(ftlAttrs);
+        if (attrs.size() == 0) {
+            return "";
+        }
+
+        String structName = iface.getName() + "FtlAttrs";
+        String res = "pub struct " + structName + " {\n";
+
+        for (String attr : attrs) {
+            // TODO(chenyang): Add actual types here
+            res += "  " + attr + ": Au,\n";
+        }
+
+        res += "}\n\n";
+
+        res += "impl " + structName + " {\n";
+        res += "  #[inline]\n";
+        res += "  pub fn new() ->" + structName + " {\n";
+        res += "    " + structName + " {\n";
+
+        for (String attr : attrs) {
+            // TODO(chenyang): Add actual types here
+            res += "      " + attr + ": Au::new(0),\n";
+        }
+
+        res += "    }\n";
+        res += "  }\n";
+        res += "}\n\n";
+        return res;
     }
 
 
@@ -76,21 +129,22 @@ public class RustGenerator extends BackendBase implements Backend {
             child_ifaces.add(child_iface);
         }
 
-        String func = " fn with_all_children(&mut self, func: |&mut FtlNode|) {\n";
+        String res = "impl FtlNode" + " for " + cls.getName() + "{\n";
+        res += " fn with_all_children(&mut self, func: |&mut FtlNode|) {\n";
 
         for (AGEval.IFace child_iface : child_ifaces) {
-            func += "  for child in self." + servoVal(cls.getChildNamesForType(child_iface).get(0)) + ".mut_iter() {\n";
-            func += "    func(as_ftl_node(child));\n";
-            func += "  }\n";
+            res += "  for child in self." + servoVal(cls.getChildNamesForType(child_iface).get(0)) + ".mut_iter() {\n";
+            res += "    func(as_ftl_node(child));\n";
+            res += "  }\n";
         }
 
-        func += " }\n";
+        res += " }\n";
 
-        return "impl FtlNode" + " for " + cls.getName() + "{\n" + func;
+        return res;
     }
 
     public String visitBlockFooter(Class cls, ALEParser ast) throws InvalidGrammarException {
-        return "}\n\n";
+        return "}\n";
     }
 
     public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException {
@@ -171,6 +225,17 @@ public class RustGenerator extends BackendBase implements Backend {
     }
 
 
+    private String toBaseVal(Class cls, String prop, String propClean) {
+        if (!(cls.getAttrsLowercase().contains(prop.toLowerCase())
+              || cls.hasField(prop)))
+            // If the attribute is in the interface, it is not in the node struct
+            // but the base field.
+            return "base." + servoVal(propClean);
+        else
+            return servoVal(propClean);
+    }
+
+
     public String lhsToAddress(String lhs, Class cls, ALEParser ast)
         throws InvalidGrammarException {
         boolean isParent;
@@ -186,7 +251,7 @@ public class RustGenerator extends BackendBase implements Backend {
             prop = lhs;
         }
         String childClean = child.toLowerCase();
-        String propClean = servoVal(prop.toLowerCase());
+        String propClean = prop.toLowerCase();
 
         child = child.toLowerCase();
 
@@ -200,20 +265,15 @@ public class RustGenerator extends BackendBase implements Backend {
         if (isParent) {
             // Parent attributes are all set in the top-level block of the visitor, so node is in
             // scope.
-            if (!(cls.getPrivAttributes().containsKey(prop) || cls.hasField(prop)))
-                // If the attribute is in the interface, it is not in the node struct
-                // but the base field.
-                return "self.base." + propClean + " = (";
-            else
-                return "self." + propClean + " = (";
+            return "self." + toBaseVal(cls, prop, propClean) + " = (";
         } else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
             // Children arrays are all assigned to inside loops, so child will be in scope.
             // We need to assigne to child_prop_last as well, becuase thats where $- is expected next time.
             // Signal this by prepending "\n\nloop_var$\n"
-            return "\n\n" + child + "_" + propClean + "_last = " + "child." + propClean + "$\n" +
-                "child." + propClean + " = (";
+            return "\n\n" + child + "_" + propClean + "_last = " + "child." + servoVal(propClean) + "$\n" +
+                "child." + servoVal(propClean) + " = (";
         } else {
-            return "self." + childClean + "." + propClean + " = (";
+            return "self." + childClean + "." + servoVal(propClean) + " = (";
         }
     }
 
@@ -269,7 +329,7 @@ public class RustGenerator extends BackendBase implements Backend {
         }
 
         String originalProp = prop.replace("$$", "").replace("$i","").replace("$-", "").replace("[-1]", "");
-        String cleanProp = servoVal(originalProp.toLowerCase());
+        String cleanProp = originalProp.toLowerCase();
 
         // TODO: this doesn't work properly right now,
         // generates .base for non-interface variables
@@ -280,10 +340,12 @@ public class RustGenerator extends BackendBase implements Backend {
 
         child = child.toLowerCase();
 
+        String baseval = toBaseVal(cls, originalProp, cleanProp);
+
         // Special cases for loop elements
         if (prop.contains("$$")) {
             if (isParent)
-                return "self." + cleanProp;
+                return "self." + servoVal(cleanProp);
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
                 return child + "_" + cleanProp;
             else
@@ -293,12 +355,12 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 throw new InvalidGrammarException("Cannot access $i of self in class: " + cls.getName());
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return "child." + cleanProp;
+                return "child." + servoVal(cleanProp);
             else
                 throw new InvalidGrammarException("Cannot access $i attrib of a non-multi child: " + cls.getName());
         } else if (prop.contains("$-")) {
             if (isParent)
-                return "self." + cleanProp;
+                return "self." + servoVal(cleanProp);
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
                 return "if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last }";
             else
@@ -314,11 +376,11 @@ public class RustGenerator extends BackendBase implements Backend {
 
             // We can assume here that the attribute is not a special loop construct.
             if (isParent)
-                return "self." + cleanProp;
+                return "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return "child." + cleanProp;
+                return "child." + baseval;
             else
-                return "self." + child + "." + cleanProp;
+                return "self." + child + "." + baseval;
         }
     }
 
@@ -442,6 +504,7 @@ public class RustGenerator extends BackendBase implements Backend {
             "use layout::flow::{BaseFlow, Flow, ImmutableFlowUtils, MutableFlowUtils, MutableOwnedFlowUtils, mut_base};\n" +
             "use layout::flow_list::{FlowList};\n" +
             "use style::{ComputedValues};\n" +
+            "use style::computed_values::LengthOrPercentageOrAuto;\n" +
             "use geom::{Point2D, Rect, SideOffsets2D, Size2D};\n" +
             "use servo_util::geometry::Au;\n" +
             "use extra::arc::Arc;\n" +
@@ -452,6 +515,14 @@ public class RustGenerator extends BackendBase implements Backend {
         res += "  fn with_all_children(&mut self, func: |&mut FtlNode|);\n";
         res += visitDispatches;
         res += "}\n\n";
+
+        for (IFace iface: ast.interfaces) {
+            res += generateFtlStruct(iface);
+        }
+
+        for (Class cls: ast.classes) {
+            res += generateFtlStruct(cls);
+        };
 
         res += fHeaders;
         res += visitOut;
