@@ -42,6 +42,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
         ftlAttrs = new HashSet<String>();
         ftlAttrs.add("bottom");
+        ftlAttrs.add("right");
         ftlAttrs.add("childsheight");
         ftlAttrs.add("myheight");
         ftlAttrs.add("render");
@@ -59,7 +60,14 @@ public class RustGenerator extends BackendBase implements Backend {
         return val.replace("_", "uscore");
     }
 
-    private String generateFtlStruct(IFace iface) {
+    private String typeConstructor(String type) {
+        if (type.equals("Au"))
+            return "Au::new(0)";
+
+        return type + "::new()";
+    }
+
+    private String generateFtlStruct(IFace iface, ALEParser ast) throws InvalidGrammarException {
         Set<String> attrs= iface.getAttrsLowercase();
         attrs.retainAll(ftlAttrs);
         if (attrs.size() == 0) {
@@ -70,8 +78,8 @@ public class RustGenerator extends BackendBase implements Backend {
         String res = "pub struct " + structName + " {\n";
 
         for (String attr : attrs) {
-            // TODO(chenyang): Add actual types here
-            res += "  " + attr + ": Au,\n";
+            String type = Generator.extendedGet(ast, iface, attr).strType;
+            res += "  " + attr + ": "+ type +",\n";
         }
 
         res += "}\n\n";
@@ -82,8 +90,8 @@ public class RustGenerator extends BackendBase implements Backend {
         res += "    " + structName + " {\n";
 
         for (String attr : attrs) {
-            // TODO(chenyang): Add actual types here
-            res += "      " + attr + ": Au::new(0),\n";
+            String type = Generator.extendedGet(ast, iface, attr).strType;
+            res += "      " + attr + ": "+ typeConstructor(type) +",\n";
         }
 
         res += "    }\n";
@@ -533,11 +541,11 @@ public class RustGenerator extends BackendBase implements Backend {
         res += "}\n\n";
 
         for (IFace iface: ast.interfaces) {
-            res += generateFtlStruct(iface);
+            res += generateFtlStruct(iface,ast);
         }
 
         for (Class cls: ast.classes) {
-            res += generateFtlStruct(cls);
+            res += generateFtlStruct(cls,ast);
         };
 
         res += fHeaders;
