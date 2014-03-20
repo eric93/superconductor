@@ -272,9 +272,9 @@ public class RustGenerator extends BackendBase implements Backend {
 
         // Initial and final loop values are local variables.
         if (propClean.contains("_init")) {
-            ret =  "let " + propClean + " = (";
+            return  "let " + propClean + " = (";
         } else if (propClean.contains("_last")) {
-            ret =  "let mut " + propClean + " = (";
+            return  "let mut " + propClean + " = (";
         }
 
         if (isParent) {
@@ -290,8 +290,6 @@ public class RustGenerator extends BackendBase implements Backend {
         } else {
             return "self." + childClean + "." + servoVal(propClean) + " = (";
         }
-
-        return lhsServoTranslate(ret);
     }
 
 
@@ -365,7 +363,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + servoVal(cleanProp);
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                ret =  child + "_" + cleanProp;
+                return  child + "_" + cleanProp;
             else
                 throw new InvalidGrammarException("Cannot access $$ attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -380,7 +378,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + servoVal(cleanProp);
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                ret =  "if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last }";
+                return  "if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last }";
             else
                 throw new InvalidGrammarException("Cannot access $- attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -389,7 +387,7 @@ public class RustGenerator extends BackendBase implements Backend {
         } else {
             // Initial loop values are local variables.
             if (cleanProp.contains("_init")) {
-                ret =  cleanProp;
+                return cleanProp;
             }
 
             // We can assume here that the attribute is not a special loop construct.
@@ -400,7 +398,6 @@ public class RustGenerator extends BackendBase implements Backend {
             else
                 return "self." + child + "." + baseval;
         }
-        return rhsServoTranslate(ret);
     }
 
     public String toAcc(String lhsRaw, AGEval.Class c) {

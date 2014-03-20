@@ -9,7 +9,8 @@
 interface BaseFlow {
     var position : Rect;
     var height : Au;
-    var width : int;
+    var width : Au;
+    var bottom : Au;
 }
 
 class BlockFlow : BaseFlow {
@@ -17,19 +18,19 @@ class BlockFlow : BaseFlow {
         flowChildren : [BaseFlow];
     }
     attributes {
-        var childsHeight : int;
-        var myHeight : int;
-        var boxWidth : int;
-        var boxHeight : int;
-        input boxStyleHeight : int;
+        var childsHeight : Au;
+        var myHeight : Au;
+        var boxWidth : Au;
+        var boxHeight : Au;
+        input boxStyleHeight : LengthOrPercentageOrAuto;
     }
     actions {
         myHeight := getHeight(boxStyleHeight);
 
         loop flowChildren {
             childsHeight := fold Au(0) .. $-.childsHeight + rectHeight(flowChildren$i.position);
-            flowChildren.bottom := fold NewAu(1) .. flowChildren$-.bottom + flowChildren$i.height;
-            flowChildren.position := fold makeRect(NewAu(0), NewAu(0), NewAu(0), NewAu(0)) ..
+            flowChildren.bottom := fold Au(1) .. flowChildren$-.bottom + flowChildren$i.height;
+            flowChildren.position := fold makeRect(Au(0), Au(0), Au(0), Au(0)) ..
                                           makeRect(Au(0),
                                                    flowChildren$i.bottom - flowChildren$i.height,
                                                    Au(10000),
@@ -45,7 +46,7 @@ class BlockFlow : BaseFlow {
 
 class InlineFlow : BaseFlow {
     actions {
-        height := NewAu(0);
+        height := Au(0);
         width := Au(0);
     }
 }
