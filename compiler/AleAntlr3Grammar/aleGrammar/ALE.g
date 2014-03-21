@@ -551,13 +551,13 @@ classField[Boolean pure, AGEval.Class container, ExtendedClass eContainer]
 		((';' {
 		   if (!$pure) {
 		     eContainer.extendedVertices.put($p.text, new ExtendedVertex(true, $t.text));
-		     $container.addField($p.text, "int");
+		     $container.addField($p.text, $t.text);
 		   }
 		 })
 		| ('=' v=id ';' {
   		  if (!$pure) {
 		    eContainer.extendedVertices.put($p.text, new ExtendedVertex(true, $t.text, $v.text));
-		    $container.addField($p.text, "int");
+		    $container.addField($p.text, $t.text);
 		  }
 		  }))
 	| VAR p2=id ':' type ';' {
@@ -566,13 +566,12 @@ classField[Boolean pure, AGEval.Class container, ExtendedClass eContainer]
 			$container.addAttribute($p2.text, $type.text);
 		}
 	}
-	| VAR p2=id ':' t=id {
+	| VAR p2=id ':' t=id ';' {
 		if (!$pure) {
 			eContainer.extendedVertices.put($p2.text, new ExtendedVertex(false, $t.text));
-			$container.addAttribute($p2.text, "int");
+			$container.addAttribute($p2.text, $t.text);
 		}
-	} ';'
-	;
+	};
 
 body[Boolean pure, AGEval.Class clss]  : ACTIONS '{' topStmt[$pure, $clss]* '}';
 
@@ -798,7 +797,7 @@ maybeType returns [boolean isMaybe, String text]
 	| type { $isMaybe = false; $text = $type.text; }
 	;
 
-type:	BOOL_KEYWORD | INT_KEYWORD | FLOAT_KEYWORD | COLOR_KEYWORD | STRING_KEYWORD | PX_KEYWORD | TAGGEDINT_KEYWORD | TAGGEDFLOAT_KEYWORD;
+type:	BOOL_KEYWORD | INT_KEYWORD | FLOAT_KEYWORD | COLOR_KEYWORD | STRING_KEYWORD | PX_KEYWORD | TAGGEDINT_KEYWORD | TAGGEDFLOAT_KEYWORD ;
 
 literal	returns [String text]:
 	prettyFloat { $text = $prettyFloat.text; }

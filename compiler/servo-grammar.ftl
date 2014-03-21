@@ -1,16 +1,8 @@
-// Naming Convention:
-
-// An underscore after an attribute's name means that the name expanded in a
-// table lookup
-
-// An underscore before an attribute's name will create that attribute in a rust
-// data structure after compilation
-
 interface BaseFlow {
-    var position : int;
-    var height : int;
-    var width : int;
-    var bottom : int;
+    var position : Au;
+    var height : Au;
+    var width : Au;
+    var bottom : Au;
 }
 
 class BlockFlow : BaseFlow {
@@ -18,11 +10,11 @@ class BlockFlow : BaseFlow {
         flowChildren : [BaseFlow];
     }
     attributes {
-        var childsHeight : int;
-        var myHeight : int;
-        var boxWidth : int;
-        var boxHeight : int;
-        input boxStyleHeight : int;
+        var childsHeight : Au;
+        var myHeight : Au;
+        var boxWidth : Au;
+        var boxHeight : Au;
+        input boxStyleHeight : LengthOrPercentageOrAuto;
     }
     actions {
         myHeight := getHeight(boxStyleHeight);
