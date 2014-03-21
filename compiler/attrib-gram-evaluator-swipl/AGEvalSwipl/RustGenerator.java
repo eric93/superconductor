@@ -35,6 +35,7 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("boxheight", "box_.as_ref().unwrap().border_box.borrow_mut().get().size.height");
         nameLookup.put("boxwidth",  "box_.as_ref().unwrap().border_box.borrow_mut().get().size.width");
         nameLookup.put("boxstyleheight", "box_.as_ref().unwrap().style.get().Box.get().height");
+        nameLookup.put("boxstylewidth", "box_.as_ref().unwrap().style.get().Box.get().width");
 
         // This can fail, better to use for-in loop in rust
         nameLookup.put("box_", "box_.as_ref().unwrap()");
@@ -44,7 +45,9 @@ public class RustGenerator extends BackendBase implements Backend {
         ftlAttrs.add("bottom");
         ftlAttrs.add("right");
         ftlAttrs.add("childsheight");
+        ftlAttrs.add("childswidth");
         ftlAttrs.add("myheight");
+        ftlAttrs.add("mywidth");
         ftlAttrs.add("render");
     }
 
