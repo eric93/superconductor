@@ -35,6 +35,7 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("boxheight", "box_.as_ref().unwrap().border_box.borrow_mut().get().size.height");
         nameLookup.put("boxwidth",  "box_.as_ref().unwrap().border_box.borrow_mut().get().size.width");
         nameLookup.put("boxstyleheight", "box_.as_ref().unwrap().style.get().Box.get().height");
+        nameLookup.put("boxstylewidth", "box_.as_ref().unwrap().style.get().Box.get().width");
 
         // This can fail, better to use for-in loop in rust
         nameLookup.put("box_", "box_.as_ref().unwrap()");
@@ -42,8 +43,11 @@ public class RustGenerator extends BackendBase implements Backend {
 
         ftlAttrs = new HashSet<String>();
         ftlAttrs.add("bottom");
+        ftlAttrs.add("right");
         ftlAttrs.add("childsheight");
+        ftlAttrs.add("childswidth");
         ftlAttrs.add("myheight");
+        ftlAttrs.add("mywidth");
         ftlAttrs.add("render");
     }
 
@@ -59,7 +63,14 @@ public class RustGenerator extends BackendBase implements Backend {
         return val.replace("_", "uscore");
     }
 
-    private String generateFtlStruct(IFace iface) {
+    private String typeConstructor(String type) {
+        if (type.equals("Au"))
+            return "Au::new(0)";
+
+        return type + "::new()";
+    }
+
+    private String generateFtlStruct(IFace iface, ALEParser ast) throws InvalidGrammarException {
         Set<String> attrs= iface.getAttrsLowercase();
         attrs.retainAll(ftlAttrs);
         if (attrs.size() == 0) {
@@ -70,8 +81,8 @@ public class RustGenerator extends BackendBase implements Backend {
         String res = "pub struct " + structName + " {\n";
 
         for (String attr : attrs) {
-            // TODO(chenyang): Add actual types here
-            res += "  " + attr + ": Au,\n";
+            String type = Generator.extendedGet(ast, iface, attr).strType;
+            res += "  " + attr + ": "+ type +",\n";
         }
 
         res += "}\n\n";
@@ -82,8 +93,8 @@ public class RustGenerator extends BackendBase implements Backend {
         res += "    " + structName + " {\n";
 
         for (String attr : attrs) {
-            // TODO(chenyang): Add actual types here
-            res += "      " + attr + ": Au::new(0),\n";
+            String type = Generator.extendedGet(ast, iface, attr).strType;
+            res += "      " + attr + ": "+ typeConstructor(type) +",\n";
         }
 
         res += "    }\n";
@@ -104,7 +115,7 @@ public class RustGenerator extends BackendBase implements Backend {
         //nothing
     }
 
-    public String functionHeader(ALEParser.Assignment assign, ALEParser ast) {
+    public String functionHeader(ALEParser.Assignment assign, ALEParser ast) throws InvalidGrammarException {
         String fName = assign._class.getName().toLowerCase() + "_" + assign._sink.replace('.','_').replace('@','_').replace("[-1]", "_init");
         String params = "(";
         boolean isFirst = true;
@@ -114,12 +125,15 @@ public class RustGenerator extends BackendBase implements Backend {
             } else {
                 isFirst = false;
             }
+            String type = Generator.extendedGet(ast, assign._class, arg).strType;
 
-            params +=  " " + assign._variables.get(arg) + ": Au";
+            params +=  " " + assign._variables.get(arg) + ": " + type;
         }
         params += ")";
+
+        String retType = Generator.extendedGet(ast, assign._class, assign._sink).strType;
         return "//@type action\n" +
-            "fn " + fName + " " + params + " -> Au { " + replaceTypeVals(assign._indexedBody, ast) + " }\n";
+            "fn " + fName + " " + params + " -> " + retType + " { " + replaceTypeVals(assign._indexedBody, ast) + " }\n";
     }
 
     public String visitBlockHeader(Class cls, ALEParser ast) throws InvalidGrammarException {
@@ -224,6 +238,17 @@ public class RustGenerator extends BackendBase implements Backend {
         return "";
     }
 
+    // Translate accessor paths so they line up with Servo's
+    String lhsServoTranslate(String lhsOrig) {
+        return lhsOrig;
+    }
+    String rhsServoTranslate(String rhsOrig) {
+        if (rhsOrig.equals("self.boxuscore")){
+            return "&self.boxuscore";
+        }
+        return rhsOrig;
+    }
+
 
     private String toBaseVal(Class cls, String prop, String propClean) {
         if (!(cls.getAttrsLowercase().contains(prop.toLowerCase())
@@ -254,12 +279,13 @@ public class RustGenerator extends BackendBase implements Backend {
         String propClean = prop.toLowerCase();
 
         child = child.toLowerCase();
+        String ret;
 
         // Initial and final loop values are local variables.
         if (propClean.contains("_init")) {
-            return "let " + propClean + " = (";
+            return  "let " + propClean + " = (";
         } else if (propClean.contains("_last")) {
-            return "let mut " + propClean + " = (";
+            return  "let mut " + propClean + " = (";
         }
 
         if (isParent) {
@@ -339,6 +365,7 @@ public class RustGenerator extends BackendBase implements Backend {
         // }
 
         child = child.toLowerCase();
+        String ret;
 
         String baseval = toBaseVal(cls, originalProp, cleanProp);
 
@@ -347,7 +374,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + servoVal(cleanProp);
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return child + "_" + cleanProp;
+                return  child + "_" + cleanProp;
             else
                 throw new InvalidGrammarException("Cannot access $$ attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -362,7 +389,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + servoVal(cleanProp);
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return "if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last }";
+                return  "if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last }";
             else
                 throw new InvalidGrammarException("Cannot access $- attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -517,11 +544,11 @@ public class RustGenerator extends BackendBase implements Backend {
         res += "}\n\n";
 
         for (IFace iface: ast.interfaces) {
-            res += generateFtlStruct(iface);
+            res += generateFtlStruct(iface,ast);
         }
 
         for (Class cls: ast.classes) {
-            res += generateFtlStruct(cls);
+            res += generateFtlStruct(cls,ast);
         };
 
         res += fHeaders;

@@ -38,6 +38,10 @@ pub fn rectHeight(rect: Rect<Au>) -> Au {
     rect.size.height
 }
 
+pub fn rectWidth(rect: Rect<Au>) -> Au {
+    rect.size.width
+}
+
 pub fn inherit(visit: |&mut layout::ftl_layout::FtlNode|, node: &mut layout::ftl_layout::FtlNode) {
     visit(node);
     node.with_all_children(|child| {
