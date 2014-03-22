@@ -49,6 +49,7 @@ public class RustGenerator extends BackendBase implements Backend {
         ftlAttrs.add("myheight");
         ftlAttrs.add("mywidth");
         ftlAttrs.add("render");
+        ftlAttrs.add("ishbox");
     }
 
     private String servoVal(String val) {
@@ -66,6 +67,8 @@ public class RustGenerator extends BackendBase implements Backend {
     private String typeConstructor(String type) {
         if (type.equals("Au"))
             return "Au::new(0)";
+        if (type.equals("bool"))
+            return "false";
 
         return type + "::new()";
     }
@@ -389,7 +392,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + servoVal(cleanProp);
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return  "if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last }";
+                return  "(if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last })";
             else
                 throw new InvalidGrammarException("Cannot access $- attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
