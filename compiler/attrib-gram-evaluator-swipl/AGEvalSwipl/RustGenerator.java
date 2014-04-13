@@ -25,7 +25,7 @@ public class RustGenerator extends BackendBase implements Backend {
     private static boolean GENERATE_LOG = false; // Toggle flag to generate log statements
 
     private Hashtable<String, String> nameLookup;
-    private HashSet<String> ftlAttrs;
+    private HashSet<String> notFtlAttrs;
 
     public RustGenerator() {
         nameLookup = new Hashtable<String, String>();
@@ -37,19 +37,34 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("boxstyleheight", "box_.as_ref().unwrap().style.get().Box.get().height");
         nameLookup.put("boxstylewidth", "box_.as_ref().unwrap().style.get().Box.get().width");
 
+        nameLookup.put("margintop", "box_.as_ref().unwrap().style.get().Margin.get().margin_top");
+        nameLookup.put("marginbottom", "box_.as_ref().unwrap().style.get().Margin.get().margin_bottom");
+        nameLookup.put("marginleft", "box_.as_ref().unwrap().style.get().Margin.get().margin_left");
+        nameLookup.put("marginright", "box_.as_ref().unwrap().style.get().Margin.get().margin_right");
+
+        nameLookup.put("paddingtop", "box_.as_ref().unwrap().style.get().Padding.get().padding_top");
+        nameLookup.put("paddingbottom", "box_.as_ref().unwrap().style.get().Padding.get().padding_bottom");
+        nameLookup.put("paddingleft", "box_.as_ref().unwrap().style.get().Padding.get().padding_left");
+        nameLookup.put("paddingright", "box_.as_ref().unwrap().style.get().Padding.get().padding_right");
+
+        nameLookup.put("cpt",  "box_.as_ref().unwrap().padding.borrow_mut().get().top");
+        nameLookup.put("cpb",  "box_.as_ref().unwrap().padding.borrow_mut().get().bottom");
+        nameLookup.put("cpl",  "box_.as_ref().unwrap().padding.borrow_mut().get().left");
+        nameLookup.put("cpr",  "box_.as_ref().unwrap().padding.borrow_mut().get().right");
+
+        nameLookup.put("cmt",  "box_.as_ref().unwrap().margin.borrow_mut().get().top");
+        nameLookup.put("cmb",  "box_.as_ref().unwrap().margin.borrow_mut().get().bottom");
+        nameLookup.put("cml",  "box_.as_ref().unwrap().margin.borrow_mut().get().left");
+        nameLookup.put("cmr",  "box_.as_ref().unwrap().margin.borrow_mut().get().right");
+
         // This can fail, better to use for-in loop in rust
         nameLookup.put("box_", "box_.as_ref().unwrap()");
         nameLookup.put("boxuscore", "boxuscore.as_ref().unwrap()");
 
-        ftlAttrs = new HashSet<String>();
-        ftlAttrs.add("bottom");
-        ftlAttrs.add("right");
-        ftlAttrs.add("childsheight");
-        ftlAttrs.add("childswidth");
-        ftlAttrs.add("myheight");
-        ftlAttrs.add("mywidth");
-        ftlAttrs.add("render");
-        ftlAttrs.add("ishbox");
+        notFtlAttrs = new HashSet<String>();
+        notFtlAttrs.add("position");
+        notFtlAttrs.add("height");
+        notFtlAttrs.add("width");
     }
 
     private String servoVal(String val) {
@@ -58,7 +73,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
         if (nameLookup.containsKey(val)) {
             val =  nameLookup.get(val);
-        } else if (ftlAttrs.contains(val)) {
+        } else if (! notFtlAttrs.contains(val)) {
             val =  "ftl_attrs." + val;
         }
         return val.replace("_", "uscore");
@@ -75,7 +90,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
     private String generateFtlStruct(IFace iface, ALEParser ast) throws InvalidGrammarException {
         Set<String> attrs= iface.getAttrsLowercase();
-        attrs.retainAll(ftlAttrs);
+        attrs.removeAll(notFtlAttrs);
         if (attrs.size() == 0) {
             return "";
         }
@@ -128,12 +143,14 @@ public class RustGenerator extends BackendBase implements Backend {
             } else {
                 isFirst = false;
             }
+            //System.out.println(fName + params);
             String type = Generator.extendedGet(ast, assign._class, arg).strType;
 
             params +=  " " + assign._variables.get(arg) + ": " + type;
         }
         params += ")";
 
+        //System.out.println(fName + params);
         String retType = Generator.extendedGet(ast, assign._class, assign._sink).strType;
         return "//@type action\n" +
             "fn " + fName + " " + params + " -> " + retType + " { " + replaceTypeVals(assign._indexedBody, ast) + " }\n";
@@ -375,7 +392,7 @@ public class RustGenerator extends BackendBase implements Backend {
         // Special cases for loop elements
         if (prop.contains("$$")) {
             if (isParent)
-                return "self." + servoVal(cleanProp);
+                return "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
                 return  child + "_" + cleanProp;
             else
@@ -390,7 +407,7 @@ public class RustGenerator extends BackendBase implements Backend {
                 throw new InvalidGrammarException("Cannot access $i attrib of a non-multi child: " + cls.getName());
         } else if (prop.contains("$-")) {
             if (isParent)
-                return "self." + servoVal(cleanProp);
+                return "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
                 return  "(if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last })";
             else
@@ -534,7 +551,8 @@ public class RustGenerator extends BackendBase implements Backend {
             "use layout::flow::{BaseFlow, Flow, ImmutableFlowUtils, MutableFlowUtils, MutableOwnedFlowUtils, mut_base};\n" +
             "use layout::flow_list::{FlowList};\n" +
             "use style::{ComputedValues};\n" +
-            "use style::computed_values::LengthOrPercentageOrAuto;\n" +
+            "use layout::model::specified;\n" +
+            "use style::computed_values::{LengthOrPercentageOrAuto,LengthOrPercentage};\n" +
             "use geom::{Point2D, Rect, SideOffsets2D, Size2D};\n" +
             "use servo_util::geometry::Au;\n" +
             "use extra::arc::Arc;\n" +

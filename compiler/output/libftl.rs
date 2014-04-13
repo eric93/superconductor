@@ -22,7 +22,7 @@ pub fn base<'a,I>(node: &'a mut layout::ftl_layout::FtlNode) -> &'a mut I {
     }
 }
 
-pub fn getHeight(length: LengthOrPercentageOrAuto) -> Au {
+pub fn specAutoOrZero(length: LengthOrPercentageOrAuto) -> Au {
     //for b in flowbox.iter() {
     MaybeAuto::from_style(length, Au::new(0)).specified_or_zero()
     //}
