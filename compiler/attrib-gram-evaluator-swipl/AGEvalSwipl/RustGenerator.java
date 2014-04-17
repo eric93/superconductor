@@ -29,11 +29,15 @@ public class RustGenerator extends BackendBase implements Backend {
 
     public RustGenerator() {
         nameLookup = new Hashtable<String, String>();
-        nameLookup.put("height", "position.size.height");
-        nameLookup.put("width", "position.size.width");
+        nameLookup.put("flowheight", "position.size.height");
+        nameLookup.put("flowwidth", "position.size.width");
+        nameLookup.put("flowx", "position.origin.x");
+        nameLookup.put("flowy", "position.origin.y");
         nameLookup.put("flowchildren", "base.children");
         nameLookup.put("boxheight", "box_.as_ref().unwrap().border_box.borrow_mut().get().size.height");
         nameLookup.put("boxwidth",  "box_.as_ref().unwrap().border_box.borrow_mut().get().size.width");
+        nameLookup.put("boxx", "box_.as_ref().unwrap().border_box.borrow_mut().get().origin.x");
+        nameLookup.put("boxy",  "box_.as_ref().unwrap().border_box.borrow_mut().get().origin.y");
         nameLookup.put("boxstyleheight", "box_.as_ref().unwrap().style.get().Box.get().height");
         nameLookup.put("boxstylewidth", "box_.as_ref().unwrap().style.get().Box.get().width");
 
@@ -62,9 +66,11 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("boxuscore", "boxuscore.as_ref().unwrap()");
 
         notFtlAttrs = new HashSet<String>();
-        notFtlAttrs.add("position");
-        notFtlAttrs.add("height");
-        notFtlAttrs.add("width");
+        notFtlAttrs.add("flowposition");
+        notFtlAttrs.add("flowheight");
+        notFtlAttrs.add("flowwidth");
+        notFtlAttrs.add("flowx");
+        notFtlAttrs.add("flowy");
     }
 
     private String servoVal(String val) {
