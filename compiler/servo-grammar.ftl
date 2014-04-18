@@ -12,8 +12,8 @@ interface BaseFlow {
     var bottom : Au;
     var right : Au;
 
-    var intrinsPrefWidth : Au;
-    var intrinsMinWidth : Au;
+    // var intrinsPrefWidth : Au;
+    // var intrinsMinWidth : Au;
 
     var availableWidth : Au;
 
@@ -21,38 +21,52 @@ interface BaseFlow {
     var totalHeight: Au;
 }
 
-
-trait widthIntrinsics{
-    attributes{
-        var sumMarginsPadding : Au;
-        var selfIntrinsWidth : Au;
-    }
+trait blockWidth{
     actions{
-        sumMarginsPadding := ml + mr + pl + pr;
-        selfIntrinsWidth := specAutoOrZero(boxStyleWidth);
-    }
-}
 
-trait blockWidth {
-    actions {
-        mt := specAutoOrZero(marginTop);
-        mb := specAutoOrZero(marginBottom);
-        ml := specAutoOrZero(marginLeft);
-        mr := specAutoOrZero(marginRight);
+        selfIntrinsWidth := specOrZero(boxStyleWidth, availableWidth);
+        selfIntrinsHeight := specOrZero(boxStyleHeight, Au(0));
 
-        pt := specified(paddingTop, Au(0));
-        pb := specified(paddingBottom, Au(0));
-        pl := specified(paddingLeft, Au(0));
-        pr := specified(paddingRight, Au(0));
+        pt := specified(paddingTop, availableWidth);
+        pb := specified(paddingBottom, availableWidth);
+        pl := specified(paddingLeft, availableWidth);
+        pr := specified(paddingRight, availableWidth);
+
+        bt := borderTop;
+        bb := borderBottom;
+        bl := borderLeft;
+        br := borderRight;
+
+        mt := isAuto(marginTop) ? Au(0) : specOrZero(marginTop, availableWidth);
+        mb := isAuto(marginBottom) ? Au(0) : specOrZero(marginBottom, availableWidth);
+        ml := isAuto(marginLeft) ?
+                (isAuto(boxStyleWidth) ?
+                  Au(0) :
+                  (isAuto(marginRight) ?
+                    (availableWidth - pr - pl - bl - br - selfIntrinsWidth) / Au(2) :
+                    (availableWidth - pr - pl - bl - br - selfIntrinsWidth - specOrZero(marginRight, availableWidth)))) :
+                specOrZero(marginLeft, availableWidth);
+
+        mr := (!isAuto(marginRight) && (isAuto(boxStyleWidth) || isAuto(marginLeft))) ?
+                specOrZero(marginRight, availableWidth) :
+                (isAuto(boxStyleWidth) ?
+                  Au(0) :
+                  (isAuto(marginLeft) ?
+                    (availableWidth - pr - pl - br - bl - selfIntrinsWidth) / Au(2) :
+                    (availableWidth - pr - pl - br - bl - selfIntrinsWidth - specOrZero(marginLeft, availableWidth))));
+
 
         computedWidth := isAuto(boxStyleWidth) ?
-                           max(intrinsMinWidth, availableWidth) - sumMarginsPadding:
+                           // max(intrinsMinWidth, availableWidth) - sumMBP:
+                           availableWidth - sumMBP:
                            selfIntrinsWidth;
+
+        sumMBP := ml + mr + pl + pr + bl + br;
 
     }
 }
 
-class BlockFlow (blockWidth, widthIntrinsics) : BaseFlow {
+class BlockFlow (blockWidth) : BaseFlow {
     children {
         flowChildren : [BaseFlow];
     }
@@ -74,6 +88,8 @@ class BlockFlow (blockWidth, widthIntrinsics) : BaseFlow {
         input boxStyleHeight : LengthOrPercentageOrAuto;
         input boxStyleWidth : LengthOrPercentageOrAuto;
 
+        var sumMBP : Au;
+        var selfIntrinsWidth : Au;
         var selfIntrinsHeight : Au;
 
         input marginTop : LengthOrPercentageOrAuto;
@@ -95,6 +111,16 @@ class BlockFlow (blockWidth, widthIntrinsics) : BaseFlow {
         var pb : Au;
         var pl : Au;
         var pr : Au;
+
+        input borderTop : Au;
+        input borderBottom : Au;
+        input borderLeft : Au;
+        input borderRight : Au;
+
+        var bt : Au;
+        var bb : Au;
+        var bl : Au;
+        var br : Au;
     }
     actions {
         isHbox := isAuto(boxStyleWidth) ? true : false;
@@ -103,10 +129,11 @@ class BlockFlow (blockWidth, widthIntrinsics) : BaseFlow {
             childsHeight := fold Au(0) .. ($-.childsHeight + flowChildren$i.totalHeight);
             childsWidth := fold Au(0) .. max($-.childsWidth, flowChildren$i.totalWidth);
 
-            intrinsMinWidth := fold selfIntrinsWidth .. max(self$-.intrinsMinWidth, flowChildren$i.totalWidth);
-            intrinsPrefWidth := fold selfIntrinsWidth + sumMarginsPadding ..
-              ((selfIntrinsWidth == Au(0)) ? (max($-.intrinsPrefWidth, sumMarginsPadding + flowChildren$i.intrinsPrefWidth))
-                                           : ($-.intrinsPrefWidth));
+            //intrinsMinWidth := fold selfIntrinsWidth + sumMBP
+            //                   .. max(self$-.intrinsMinWidth, flowChildren$i.intrinsMinWidth + sumMBP);
+            // intrinsPrefWidth := fold selfIntrinsWidth + sumMBP ..
+            //  ((selfIntrinsWidth == Au(0)) ? (max($-.intrinsPrefWidth, sumMBP + flowChildren$i.intrinsPrefWidth))
+            //                               : ($-.intrinsPrefWidth));
 
             flowChildren.bottom := fold Au(0) .. (flowChildren$-.bottom + flowChildren$i.totalHeight);
             flowChildren.right := fold Au(0) .. (flowChildren$i.totalWidth);
@@ -118,10 +145,10 @@ class BlockFlow (blockWidth, widthIntrinsics) : BaseFlow {
 
         }
 
-        selfIntrinsHeight := specAutoOrZero(boxStyleHeight);
 
-        flowWidth := intrinsMinWidth + pl + pr;
-        flowHeight := (selfIntrinsHeight == Au(0)) ? childsHeight + pb + pt : selfIntrinsHeight + pb + pt;
+        flowWidth := computedWidth + pl + pr + bl + br;
+        flowHeight := (selfIntrinsHeight == Au(0)) ? childsHeight + pb + pt + bb + bt
+                                                   : selfIntrinsHeight + pb + pt + bb + bt;
         flowX := containingX + ml;
         flowY := containingY + mt;
 
@@ -141,8 +168,8 @@ class InlineFlow : BaseFlow {
         flowWidth := Au(0);
         flowX := Au(0);
         flowY := Au(0);
-        intrinsPrefWidth := Au(0);
-        intrinsMinWidth := Au(0);
+        // intrinsPrefWidth := Au(0);
+        // intrinsMinWidth := Au(0);
         totalHeight := Au(0);
         totalWidth := Au(0);
     }

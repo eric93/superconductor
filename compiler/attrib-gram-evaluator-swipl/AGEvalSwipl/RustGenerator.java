@@ -51,6 +51,11 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("paddingleft", "box_.as_ref().unwrap().style.get().Padding.get().padding_left");
         nameLookup.put("paddingright", "box_.as_ref().unwrap().style.get().Padding.get().padding_right");
 
+        nameLookup.put("bordertop",    "box_.as_ref().unwrap().style.get().Border.get().border_top_width");
+        nameLookup.put("borderbottom", "box_.as_ref().unwrap().style.get().Border.get().border_bottom_width");
+        nameLookup.put("borderleft",   "box_.as_ref().unwrap().style.get().Border.get().border_left_width");
+        nameLookup.put("borderright",  "box_.as_ref().unwrap().style.get().Border.get().border_right_width");
+
         nameLookup.put("cpt",  "box_.as_ref().unwrap().padding.borrow_mut().get().top");
         nameLookup.put("cpb",  "box_.as_ref().unwrap().padding.borrow_mut().get().bottom");
         nameLookup.put("cpl",  "box_.as_ref().unwrap().padding.borrow_mut().get().left");
@@ -557,7 +562,7 @@ public class RustGenerator extends BackendBase implements Backend {
             "use layout::flow::{BaseFlow, Flow, ImmutableFlowUtils, MutableFlowUtils, MutableOwnedFlowUtils, mut_base};\n" +
             "use layout::flow_list::{FlowList};\n" +
             "use style::{ComputedValues};\n" +
-            "use layout::model::specified;\n" +
+            "use layout::model::{specified,MaybeAuto};\n" +
             "use style::computed_values::{LengthOrPercentageOrAuto,LengthOrPercentage};\n" +
             "use geom::{Point2D, Rect, SideOffsets2D, Size2D};\n" +
             "use servo_util::geometry::Au;\n" +

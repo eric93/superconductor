@@ -22,9 +22,9 @@ pub fn base<'a,I>(node: &'a mut layout::ftl_layout::FtlNode) -> &'a mut I {
     }
 }
 
-pub fn specAutoOrZero(length: LengthOrPercentageOrAuto) -> Au {
+pub fn specOrZero(length: LengthOrPercentageOrAuto, containing: Au) -> Au {
     //for b in flowbox.iter() {
-    MaybeAuto::from_style(length, Au::new(0)).specified_or_zero()
+    MaybeAuto::from_style(length, containing).specified_or_zero()
     //}
     //Au(0)
 }
