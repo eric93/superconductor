@@ -22,7 +22,7 @@ import jpl.Variable;
 
 public class RustGenerator extends BackendBase implements Backend {
 
-    private static boolean GENERATE_LOG = false; // Toggle flag to generate log statements
+    private static boolean GENERATE_LOG = true; // Toggle flag to generate log statements
 
     private Hashtable<String, String> nameLookup;
     private HashSet<String> notFtlAttrs;
@@ -71,11 +71,13 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("boxuscore", "boxuscore.as_ref().unwrap()");
 
         notFtlAttrs = new HashSet<String>();
-        notFtlAttrs.add("flowposition");
-        notFtlAttrs.add("flowheight");
-        notFtlAttrs.add("flowwidth");
-        notFtlAttrs.add("flowx");
-        notFtlAttrs.add("flowy");
+        // notFtlAttrs.add("flowposition");
+        // notFtlAttrs.add("flowheight");
+        // notFtlAttrs.add("flowwidth");
+        // notFtlAttrs.add("flowx");
+        // notFtlAttrs.add("flowy");
+        notFtlAttrs.add("is_root");
+        notFtlAttrs.add("screenwidth");
     }
 
     private String servoVal(String val) {
@@ -194,7 +196,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
     public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException {
         String res = " fn visit_" + visitNum + "(&mut self) {\n"
-            + logStmt(2, 2, "visit " + " " + cls.getName() + " (id: \" + self.id.to_str() + \")", "\"" + visitNum + "\"");
+            + logStmt(2, 2, "visit " + " " + cls.getName(), "\"" + visitNum + "\"");
         return res;
     }
 
@@ -242,16 +244,22 @@ public class RustGenerator extends BackendBase implements Backend {
         if (! GENERATE_LOG) {
             return "";
         }
+
+        // Hack to get rid of rust compiler errors, this cannot be borrowed again
+        if (rhs.contains("borrowuscoremut()")) {
+            return "";
+        }
+
         String res = "";
         for (int i = 0; i < indentSrc; i++) res += " ";
-        res += "log(\"";
+        res += "debug!(\"FTL: ";
         for (int i = 0; i < indentOut; i++) res += " ";
-        res += msg + ": \" + " + rhs + ")";
-        return res + ";\n";
+        res += msg + " {}\", " + rhs + ");\n";
+        return res;
     }
 
     public String logStmtVar(int indentSrc, int indentOut, String msg, ALEParser ast, AGEval.Class cls, String rhs, String rhsAddress) throws InvalidGrammarException {
-        return logStmt(indentSrc, indentOut, msg, rhsAddress+ ".to_str()");
+        return logStmt(indentSrc, indentOut, msg, rhsAddress);
     }
 
     public String asgnE(String lhs, String rhs) {
@@ -428,7 +436,7 @@ public class RustGenerator extends BackendBase implements Backend {
             throw new InvalidGrammarException("[-1] is not supported by the Rust backend.");
         } else {
             // Initial loop values are local variables.
-            if (cleanProp.contains("_init")) {
+            if (cleanProp.contains("_init") || cleanProp.contains("_last")) {
                 return cleanProp;
             }
 
@@ -436,9 +444,9 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return "child." + baseval;
+                return "child." + servoVal(cleanProp);
             else
-                return "self." + child + "." + baseval;
+                return "self." + child + "." + servoVal(cleanProp);
         }
     }
 

@@ -19,6 +19,8 @@ interface BaseFlow {
 
     var totalWidth: Au;
     var totalHeight: Au;
+
+    input screenwidth: Au;
 }
 
 trait blockWidth{
@@ -56,12 +58,14 @@ trait blockWidth{
                     (availableWidth - pr - pl - br - bl - selfIntrinsWidth - specOrZero(marginLeft, availableWidth))));
 
 
-        computedWidth := isAuto(boxStyleWidth) ?
-                           // max(intrinsMinWidth, availableWidth) - sumMBP:
-                           availableWidth - sumMBP:
-                           selfIntrinsWidth;
+        computedWidth := is_root ?
+                           screenwidth:
+                           (isAuto(boxStyleWidth) ?
+                             // max(intrinsMinWidth, availableWidth) - sumMBP:
+                             availableWidth - sumMBP:
+                             selfIntrinsWidth);
 
-        sumMBP := ml + mr + pl + pr + bl + br;
+        sumMBP := ml + mr + pl + pr;
 
     }
 }
@@ -81,7 +85,7 @@ class BlockFlow (blockWidth) : BaseFlow {
         var boxY : Au;
         var boxX : Au;
 
-        var isHbox : bool;
+        input is_root : bool;
 
         var computedWidth : Au;
 
@@ -123,8 +127,6 @@ class BlockFlow (blockWidth) : BaseFlow {
         var br : Au;
     }
     actions {
-        isHbox := isAuto(boxStyleWidth) ? true : false;
-
         loop flowChildren {
             childsHeight := fold Au(0) .. ($-.childsHeight + flowChildren$i.totalHeight);
             childsWidth := fold Au(0) .. max($-.childsWidth, flowChildren$i.totalWidth);
@@ -146,7 +148,7 @@ class BlockFlow (blockWidth) : BaseFlow {
         }
 
 
-        flowWidth := computedWidth + pl + pr + bl + br;
+        flowWidth :=  is_root ? screenwidth : computedWidth + pl + pr + bl + br;
         flowHeight := (selfIntrinsHeight == Au(0)) ? childsHeight + pb + pt + bb + bt
                                                    : selfIntrinsHeight + pb + pt + bb + bt;
         flowX := containingX + ml;
