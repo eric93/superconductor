@@ -34,10 +34,10 @@ trait blockWidth{
         pl := specified(paddingLeft, availableWidth);
         pr := specified(paddingRight, availableWidth);
 
-        bt := Au(0);// borderTop;
-        bb := Au(0);// borderBottom;
-        bl := Au(0);// borderLeft;
-        br := Au(0);// borderRight;
+        bt := borderTop;
+        bb := borderBottom;
+        bl := borderLeft;
+        br := borderRight;
 
         mt := isAuto(marginTop) ? Au(0) : specOrZero(marginTop, availableWidth);
         mb := isAuto(marginBottom) ? Au(0) : specOrZero(marginBottom, availableWidth);
