@@ -19,7 +19,6 @@
 /superconductorjs/node_modules/
 /compiler/local.properties
 /compiler/tmp-output
-/compiler/output/simple-test*
 /compiler/output/liblibftl*.dylib
-/compiler/output/servo-grammar.*
-/compiler/output/simple-test.*
+/compiler/output/css-grammar.*
+/compiler/output/intel-demo*

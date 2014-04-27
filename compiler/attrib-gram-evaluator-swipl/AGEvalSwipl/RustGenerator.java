@@ -78,6 +78,7 @@ public class RustGenerator extends BackendBase implements Backend {
         // notFtlAttrs.add("flowy");
         notFtlAttrs.add("is_root");
         notFtlAttrs.add("screenwidth");
+        notFtlAttrs.add("position");
     }
 
     private String servoVal(String val) {
