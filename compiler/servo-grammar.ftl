@@ -34,10 +34,10 @@ trait blockWidth{
         pl := specified(paddingLeft, availableWidth);
         pr := specified(paddingRight, availableWidth);
 
-        bt := borderTop;
-        bb := borderBottom;
-        bl := borderLeft;
-        br := borderRight;
+        bt := Au(0);// borderTop;
+        bb := Au(0);// borderBottom;
+        bl := Au(0);// borderLeft;
+        br := Au(0);// borderRight;
 
         mt := isAuto(marginTop) ? Au(0) : specOrZero(marginTop, availableWidth);
         mb := isAuto(marginBottom) ? Au(0) : specOrZero(marginBottom, availableWidth);
@@ -65,7 +65,7 @@ trait blockWidth{
                              availableWidth - sumMBP:
                              selfIntrinsWidth);
 
-        sumMBP := ml + mr + pl + pr;
+        sumMBP := ml + mr + pl + pr + bl + br;
 
     }
 }
@@ -137,8 +137,8 @@ class BlockFlow (blockWidth) : BaseFlow {
             //  ((selfIntrinsWidth == Au(0)) ? (max($-.intrinsPrefWidth, sumMBP + flowChildren$i.intrinsPrefWidth))
             //                               : ($-.intrinsPrefWidth));
 
-            flowChildren.bottom := fold Au(0) .. (flowChildren$-.bottom + flowChildren$i.totalHeight);
-            flowChildren.right := fold Au(0) .. (flowChildren$i.totalWidth);
+            flowChildren.bottom := fold pt + bt .. (flowChildren$-.bottom + flowChildren$i.totalHeight);
+            flowChildren.right := fold Au(0) .. (flowChildren$i.totalWidth + pl + bl);
 
             flowChildren.containingX := fold Au(0) .. flowChildren$i.right - flowChildren$i.totalWidth;
             flowChildren.containingY := fold Au(0) .. flowChildren$i.bottom - flowChildren$i.totalHeight;
