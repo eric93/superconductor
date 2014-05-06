@@ -567,16 +567,11 @@ public class RustGenerator extends BackendBase implements Backend {
             "use layout::ftl_lib::*;\n" +
             "use layout::block::BlockFlow;\n" +
             "use layout::inline::InlineFlow;\n" +
-            "use layout::box_::Box;\n" +
-            "use layout::flow::{BaseFlow, Flow, ImmutableFlowUtils, MutableFlowUtils, MutableOwnedFlowUtils, mut_base};\n" +
+            "use layout::flow::{mut_base};\n" +
             "use layout::flow_list::{FlowList};\n" +
-            "use style::{ComputedValues};\n" +
-            "use layout::model::{specified,MaybeAuto};\n" +
+            "use layout::model::{specified};\n" +
             "use style::computed_values::{LengthOrPercentageOrAuto,LengthOrPercentage};\n" +
-            "use geom::{Point2D, Rect, SideOffsets2D, Size2D};\n" +
             "use servo_util::geometry::Au;\n" +
-            "use extra::arc::Arc;\n" +
-            "use std::int::to_str_bytes;\n" +
             "use std::util;\n\n";
 
         res += "pub trait FtlNode {\n";

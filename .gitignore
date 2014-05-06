@@ -22,3 +22,4 @@
 /compiler/output/liblibftl*.dylib
 /compiler/output/css-grammar.*
 /compiler/output/intel-demo*
+/compiler/output/demo-?d.*
