@@ -27,11 +27,19 @@ class BlockFlow : BaseFlow {
         myWidth := specOrZero(boxStyleWidth, Au(0));
 
         loop flowChildren {
-            childsHeight := fold Au(0) .. isHbox ? max($-.childsHeight, rectHeight(flowChildren$i.position)) : ($-.childsHeight + rectHeight(flowChildren$i.position));
-            childsWidth := fold Au(0) .. isHbox ? ($-.childsWidth + rectWidth(flowChildren$i.position)) : max($-.childsWidth, rectWidth(flowChildren$i.position));
+            childsHeight := fold Au(0) ..
+              (isHbox ? max($-.childsHeight, rectHeight(flowChildren$i.position)) :
+                        ($-.childsHeight + rectHeight(flowChildren$i.position)));
+            childsWidth := fold Au(0) ..
+              (isHbox ? ($-.childsWidth + rectWidth(flowChildren$i.position)) :
+                        max($-.childsWidth, rectWidth(flowChildren$i.position)));
 
-            flowChildren.bottom := fold Au(0) .. (isHbox ? (flowChildren$i.flowHeight) : (flowChildren$-.bottom + flowChildren$i.flowHeight));
-            flowChildren.right := fold Au(0) .. (isHbox ? (flowChildren$-.right + flowChildren$i.flowWidth) : (flowChildren$i.flowWidth));
+            flowChildren.bottom := fold Au(0) ..
+              (isHbox ? (flowChildren$i.flowHeight) :
+                        (flowChildren$-.bottom + flowChildren$i.flowHeight));
+            flowChildren.right := fold Au(0) ..
+              (isHbox ? (flowChildren$-.right + flowChildren$i.flowWidth) :
+                        (flowChildren$i.flowWidth));
 
             flowChildren.position := fold makeRect(Au(0), Au(0), Au(0), Au(0)) ..
                                           makeRect(flowChildren$i.right - flowChildren$i.flowWidth,
