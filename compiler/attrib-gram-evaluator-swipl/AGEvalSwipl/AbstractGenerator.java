@@ -601,7 +601,7 @@ public class AbstractGenerator implements GeneratorI {
 	
 	
 	
-	public void openLoopClean (AGEval.Class cls, String loopVar, 
+	public void openLoopClean (AGEval.Class cls, ALEParser.LoopOrdering loopVar, 
 			AGEvaluatorSwipl.Schedule sched, 
 			LoopRecoverer.Block block,
 			HashMap<String, String> exprToCall, HashMap<String, String> exprPrinter,
@@ -627,7 +627,7 @@ public class AbstractGenerator implements GeneratorI {
 		soFar.put(cls, soFar.get(cls) + res);
 	}
 	
-	public void closeLoopClean (AGEval.Class cls, String loopVar, 
+	public void closeLoopClean (AGEval.Class cls, ALEParser.LoopOrdering loopVar, 
 			AGEvaluatorSwipl.Schedule sched, 
 			LoopRecoverer.Block block,			
 			HashMap<String, String> exprToCall, HashMap<String, String> exprPrinter,

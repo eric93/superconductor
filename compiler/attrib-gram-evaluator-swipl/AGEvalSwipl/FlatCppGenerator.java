@@ -307,19 +307,19 @@ public class FlatCppGenerator implements Backend {
 	}
 
 	@Override
-	public String openChildLoop(Class parent_class, String loopVar, ALEParser ast) {
-		return "SFORLOOPALIAS_FLATCPP(index, " + fields.findCppField(parent_class, "child_" + loopVar 
+	public String openChildLoop(Class parent_class, ALEParser.LoopOrdering loopVar, ALEParser ast) {
+		return "SFORLOOPALIAS_FLATCPP(index, " + fields.findCppField(parent_class, "child_" + loopVar.childName
 				+ "_leftmost_child").getCppName() + ", step) {\n";
 	}
 
 	@Override
-	public String closeChildLoop(String loopVar) {
+	public String closeChildLoop(ALEParser.LoopOrdering loopVar) {
 		return "  } SFORLOOPALIAS_FLATCPP_END();\n";
 	}
 
 	@Override
-	public String openLastChild(Class cls, String loopVar) {
-		return "    if (step == " + fields.findCppField(cls, "child_" + loopVar + "_count").getCppName() + "[index]) {\n"; 
+	public String openLastChild(Class cls, ALEParser.LoopOrdering loopVar) {
+		return "    if (step == " + fields.findCppField(cls, "child_" + loopVar.childName + "_count").getCppName() + "[index]) {\n"; 
 	}
 
 	@Override
