@@ -317,7 +317,7 @@ public class LoopRecoverer {
 			if (n.contains("_step1")) {
 				String nBase = n.replace("_step1", "");
 				ALEParser.LoopOrdering nLoop = reducts.getVarLoop(c, nBase);
-				if (!keyLoop.equals(nLoop)) continue;				
+				if (!keyLoop.equals(nLoop) && "".equals(keyLoop.expr) && "".equals(nLoop.expr)) continue; //FIXME: is this sufficient?				
 				int n0 = AGEvaluatorSwipl.chainLoopsChilds ? -1 : nodes.lastIndexOf(nBase + "_step0");
 				int n1 = nodes.lastIndexOf(nBase + "_step1");
 				int n2 = nodes.lastIndexOf(nBase + "_step2");
