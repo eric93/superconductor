@@ -5,7 +5,7 @@ interface Node {
 class MidNode : Node {
     children{ kids: [Node]; }
     actions{
-        loop kids{
+        loop kids by func(kids$i.num) {
             num := fold 0 .. $-.num + kids$i.num;
         }
     }

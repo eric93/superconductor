@@ -605,7 +605,11 @@ topStmt[Boolean pure, AGEval.Class clss]
 	 ;
 
 loop[Boolean pure, AGEval.Class clss, boolean inCond, String loopVar] returns [ArrayList<Cond> conds, HashSet<Assignment> assigns]:
-	LOOP l=id (STAR { System.err.println("star on loop is deprecated"); })?'{'
+	LOOP l=id (STAR { System.err.println("star on loop is deprecated"); })?
+        (BY {HashMap<String, String> loopIterator = new HashMap<String,String>();}
+            callExpr[loopIterator]
+            {System.err.println(loopIterator.toString());})?
+        '{'
 	{
 	  if (!"".equals(loopVar)) {
 	    System.err.println("no nested loops: violation on " + $l.text);
@@ -826,6 +830,8 @@ ELSE	: 'else';
 
 LOOP	: 'loop';
 FOLD 	: 'fold';
+
+BY      : 'by';
 
 TYPE	:	'type';
 CHILDREN:	'children';

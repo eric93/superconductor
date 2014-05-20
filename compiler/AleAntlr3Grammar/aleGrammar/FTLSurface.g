@@ -54,6 +54,7 @@ PX_KEYWORD	:	'px';
 TAGGEDINT_KEYWORD : 'taggedInt';
 TAGGEDFLOAT_KEYWORD : 'taggedFloat';
 TIME_KEYWORD: 'time';
+BY_KEYWORD: 'by';
 
 INT :	'0'..'9'+ ;
 FLOAT
