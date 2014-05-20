@@ -46,7 +46,10 @@ public class Reductions {
 			if (rhs.split("_").length == 2) return rhs.split("_")[0];			
 		}*/
 
-        rhs = rhs.replace("_step","");
+        if(rhs.contains("_step"))
+            rhs = rhs.replace("_step","");
+        if(rhs.split("_").length == 2 && !rhs.split("_")[0].equals("self"))
+            rhs = rhs.replace("_","@");
 		
 		ALEParser.LoopOrdering read = allClassLoopListReads.get(c).get(rhs);
 		if (read != null) return read;

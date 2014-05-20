@@ -194,6 +194,10 @@ options {
       public boolean equals(LoopOrdering other) {
           return "".equals(this.expr) && "".equals(other.expr) && this.childName.equals(other.childName);
       }
+
+      public String toString() {
+          return "".equals(expr) ? childName : childName + " by " + expr;
+      }
   }
 
   public class Assignment {

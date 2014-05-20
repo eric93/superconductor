@@ -510,7 +510,7 @@ public class AGEvaluatorSwipl {
 	public void surfaceChecks (Reductions reducts) throws InvalidGrammarException {
 		//1. $-, $i of self variable are only on fold over that variable
 		for (Assignment asgn : ast.assignments) {
-			if (!asgn.loopVar.equals("")) {				
+			if (!asgn.loopVar.childName.equals("")) {				
 				if (asgn.isReduction) {
 					for (String e : asgn.startVariables.keySet())
 						if (attribBase(e).equals("self") && (e.contains("$i") || e.contains("$-"))) 							
@@ -533,7 +533,7 @@ public class AGEvaluatorSwipl {
 		}
 		//2. self loops are reducibles  ( loop child { x = y$$ } is not allowed )
 		for (Assignment asgn : ast.assignments) {
-			if (!asgn.isReduction && !asgn.loopVar.equals("") && attribBase(asgn._sink).equals("self")) {
+			if (!asgn.isReduction && !asgn.loopVar.childName.equals("") && attribBase(asgn._sink).equals("self")) {
 				System.err.println("loop " + asgn.loopVar + " { ... " + asgn._class + "::" + asgn._sink + " := <expr>");
 				throw new InvalidGrammarException("Loop assignments to a self variable must be in a fold (or hoisted out of the loop)");
 			}
