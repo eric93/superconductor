@@ -206,22 +206,22 @@ public class RustGenerator extends BackendBase implements Backend {
     }
 
 
-    public String openChildLoop (AGEval.Class parent_class, String loopVar, ALEParser ast) {
+    public String openChildLoop (AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, ALEParser ast) {
 
-        AGEval.IFace iface = parent_class.getChildMappings().get(loopVar);
+        AGEval.IFace iface = parent_class.getChildMappings().get(loopVar.childName);
         //System.out.println("Loopvar: " + loopVar);
-        String ret = "let mut children = util::replace(&mut self." + servoVal(loopVar) + ", FlowList::new());\n";
+        String ret = "let mut children = util::replace(&mut self." + servoVal(loopVar.childName) + ", FlowList::new());\n";
         ret += "  let mut first = true;\n";
         ret += "  for child in children.mut_iter() {\n";
         ret += "    let child = mut_base(child);\n";
         return ret;
     }
 
-    public String closeChildLoop(String loopVar) {
+    public String closeChildLoop(ALEParser.LoopOrdering loopVar) {
         String ret = "";
         ret += "    first = false;\n";
         ret += "  }\n";
-        ret += "  self." + servoVal(loopVar) + " = children;\n";
+        ret += "  self." + servoVal(loopVar.childName) + " = children;\n";
         return ret;
     }
 
@@ -497,7 +497,7 @@ public class RustGenerator extends BackendBase implements Backend {
         }
     }
 
-    public String openLastChild(AGEval.Class cls, String loopVar) {
+    public String openLastChild(AGEval.Class cls, ALEParser.LoopOrdering loopVar) {
         return "      if (i + 1 == children.length) {\n";
     }
 

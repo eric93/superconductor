@@ -15,7 +15,7 @@ public class Reductions {
 	//schedule dependency generation
 	public final ArrayList<Assignment> allLoopStatements = new ArrayList<Assignment>();
     public final HashMap<AGEval.Class, HashSet<String> > allClassReads = new HashMap<AGEval.Class, HashSet<String> >();
-    public final HashMap<AGEval.Class, HashMap<String, String>> allClassLoopListReads = new HashMap<AGEval.Class, HashMap<String, String>>(); //class => read => loop (monomorphic in loop var)
+    public final HashMap<AGEval.Class, HashMap<String, ALEParser.LoopOrdering>> allClassLoopListReads = new HashMap<AGEval.Class, HashMap<String, ALEParser.LoopOrdering>>(); //class => read => loop (monomorphic in loop var)
     public final HashMap<AGEval.Class, HashSet<String> > allClassWrites = new HashMap<AGEval.Class, HashSet<String> >();
     
     //code generation (HTML5)
@@ -35,17 +35,20 @@ public class Reductions {
 	//public final HashMap<AGEval.Class, HashSet<String> > loopReductionWrites = new HashMap<AGEval.Class, HashSet<String> >(); 
 	//public final HashMap<AGEval.Class, HashSet<String> > accessedAsReduction = new HashMap<AGEval.Class, HashSet<String> >();
 	
-	public String getVarLoop(AGEval.Class c, String rhsRaw) throws Exception { //without annotations
+	public ALEParser.LoopOrdering getVarLoop(AGEval.Class c, String rhsRaw) throws Exception { //without annotations
 		String rhs = rhsRaw.replace("_step1", "_step").replace("_step2", "_step").replace("_stepn", "_step").toLowerCase();
-		if (rhs.contains("@") && !rhs.contains("self@")) return rhs.split("@")[0];
+        // Unneccesary, and doesn't work with new loops
+		/*if (rhs.contains("@") && !rhs.contains("self@")) return rhs.split("@")[0];
 		if (rhs.contains("_step")) { //i_step or child_i_step
 			if (rhs.split("_").length == 3) return rhs.split("_")[0];
 			else rhs = rhs.replace("_step","");
 		} else { //i or child_i
 			if (rhs.split("_").length == 2) return rhs.split("_")[0];			
-		}
+		}*/
+
+        rhs = rhs.replace("_step","");
 		
-		String read = allClassLoopListReads.get(c).get(rhs);
+		ALEParser.LoopOrdering read = allClassLoopListReads.get(c).get(rhs);
 		if (read != null) return read;
 		
 		for (Assignment asgn : allLoopStatements) 
@@ -54,7 +57,7 @@ public class Reductions {
 		
 		System.err.println("Cannot find loop var for: " + rhs);
 		System.err.println(c.getName() + "::reads");
-		for (Entry<String,String> e : allClassLoopListReads.get(c).entrySet()) {
+		for (Entry<String,ALEParser.LoopOrdering> e : allClassLoopListReads.get(c).entrySet()) {
 			System.err.println("  " + e.getKey() + " => " + e.getValue());
 		}
 		System.err.println("Assigns: ");
@@ -76,7 +79,7 @@ public class Reductions {
     		usesStep.put(cls, new HashSet<String>());
     		lastUses.put(cls, new HashMap<String, ArrayList<String> >()); //must end a loop where these are calc'd
     		allClassReads.put(cls, new HashSet<String>());
-    		allClassLoopListReads.put(cls, new HashMap<String, String>());
+    		allClassLoopListReads.put(cls, new HashMap<String, ALEParser.LoopOrdering>());
     		allClassWrites.put(cls, new HashSet<String>());
     		//loopWrites.put(cls, new HashSet<String>());
     		//loopReductionWrites.put(cls, new HashSet<String>());
@@ -150,15 +153,15 @@ public class Reductions {
 	
 	//if reading self.loop- or self.loop$i, check in right loop
 	//do not record read of self.x$$
-	public void gatherAllReads(AGEval.Class cls, String lhs, HashMap<String, String> variables, String loopVar) throws InvalidGrammarException {
+	public void gatherAllReads(AGEval.Class cls, String lhs, HashMap<String, String> variables, ALEParser.LoopOrdering loopVar) throws InvalidGrammarException {
 		if (variables == null) return;
 		for (String v : variables.keySet()) {
 			String cleanV = v.replace("$$", "").replace("$i", "").replace("$-", "").replace("[-1]", "");
 			String cleanVFull = AGEvaluatorSwipl.attribBase(cleanV) + "@" + AGEvaluatorSwipl.attribName(cleanV); 
 			allClassReads.get(cls).add(cleanV);
-			if (!loopVar.equals("") && (v.contains("$$") || v.contains("$i") || v.contains("$-"))) {
+			if (!loopVar.childName.equals("") && (v.contains("$$") || v.contains("$i") || v.contains("$-"))) {
 				if (AGEvaluatorSwipl.attribBase(v).equals("self")) {
-					String oldLoop = allClassLoopListReads.get(cls).get(cleanVFull);
+					ALEParser.LoopOrdering oldLoop = allClassLoopListReads.get(cls).get(cleanVFull);
 					if (oldLoop != null && !oldLoop.equals(loopVar))
 						throw new InvalidGrammarException("loop self::" + v + " var used in two different loops: " + loopVar + " and " + oldLoop);					
 				}

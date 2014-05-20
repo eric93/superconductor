@@ -579,7 +579,7 @@ public class Generator implements GeneratorI {
 		//String loopVar = sched._ast.extendedClasses.get(cls).idToLoop.get(openLoops.get(cls).get(0).replace("_step", "").replace("_","@"));		
 		ExtendedClass cls2 = sched._ast.extendedClasses.get(cls);
 	    		
-		res += backend.openLastChild(cls, loopVar);
+		res += backend.openLastChild(cls, new ALEParser.LoopOrdering(loopVar));
 		boolean hasAnyToCopy = false;
 		if (!openLoops.containsKey(cls)) {
 			String options = "";
@@ -613,7 +613,7 @@ public class Generator implements GeneratorI {
 				}
 			}
 		}
-		res = (hasAnyToCopy ? res : "") + backend.closeChildLoop(loopVar) + "\n";
+		res = (hasAnyToCopy ? res : "") + backend.closeChildLoop(new ALEParser.LoopOrdering(loopVar)) + "\n";
 		
 		String inits = "\n";
 		for (String s : openLoops.get(cls)) {
@@ -639,7 +639,7 @@ public class Generator implements GeneratorI {
 				System.err.println("Missing log: " + sClean);				
 		}
 		
-		inits += backend.openChildLoop(cls, loopVar, sched._ast);
+		inits += backend.openChildLoop(cls, new ALEParser.LoopOrdering(loopVar), sched._ast);
 		
 		openLoops.remove(cls);
 		

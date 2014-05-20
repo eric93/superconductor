@@ -29,14 +29,14 @@ public class LoopRecoverer {
 	public class Block {
 		public final BlockType blockType;
 		public final Vector<String> assignments;
-		public final String maybeLoopVar; //may be null
+		public final ALEParser.LoopOrdering maybeLoopVar; //may be null
 		public Block (BlockType blockType_, Vector<String> assignments_) throws Exception {
 			if (blockType_ == BlockType.LOOP) throw new Exception("Use loop constructor for loop");
 			blockType = blockType_;
 			assignments = assignments_;
 			maybeLoopVar = null;
 		}
-		public Block (BlockType blockType_, Vector<String> assignments_, String loopVar) {
+		public Block (BlockType blockType_, Vector<String> assignments_, ALEParser.LoopOrdering loopVar) {
 			blockType = blockType_;
 			assignments = assignments_;
 			maybeLoopVar = loopVar;
@@ -307,7 +307,7 @@ public class LoopRecoverer {
 		HashSet<String> res = new HashSet<String>();
 		
 		String keyName = key.replace("_stepn","");
-		String keyLoop = reducts.getVarLoop(c, key.replace("_stepn", ""));
+		ALEParser.LoopOrdering keyLoop = reducts.getVarLoop(c, key.replace("_stepn", ""));
 
 		int key0 = nodes.lastIndexOf(keyName+"_step0");
 		int key1 = nodes.lastIndexOf(keyName+"_step1");
@@ -316,7 +316,7 @@ public class LoopRecoverer {
 		for (String n : nodes) 
 			if (n.contains("_step1")) {
 				String nBase = n.replace("_step1", "");
-				String nLoop = reducts.getVarLoop(c, nBase);
+				ALEParser.LoopOrdering nLoop = reducts.getVarLoop(c, nBase);
 				if (!keyLoop.equals(nLoop)) continue;				
 				int n0 = AGEvaluatorSwipl.chainLoopsChilds ? -1 : nodes.lastIndexOf(nBase + "_step0");
 				int n1 = nodes.lastIndexOf(nBase + "_step1");
@@ -407,7 +407,7 @@ public class LoopRecoverer {
 			maxPreN = Math.max(maxPreN, nodes.indexOf(preN));
 			maxPostN = Math.max(maxPostN, nodes.indexOf(l + "_stepn")); //FIXME none might not exist if pure writes: do between 1 and 2 instead?
 		}
-		String loopVar = reducts.getVarLoop(c, loopEquivCanonical.iterator().next());
+		ALEParser.LoopOrdering loopVar = reducts.getVarLoop(c, loopEquivCanonical.iterator().next());
 		int recurIdx = nodes.indexOf(loopVar +"unrolln_recur"); 
 		if (maxPreN < recurIdx && maxPostN > recurIdx) {
 			res.add(nodes.get(recurIdx));
@@ -527,7 +527,7 @@ public class LoopRecoverer {
 							allDone = false;
 						}
 					} else if (first.contains("unrolln_recur")) {
-						Block loop = new Block(BlockType.LOOP, new Vector<String>(), first.split("unrolln_")[0]);
+						Block loop = new Block(BlockType.LOOP, new Vector<String>(), new ALEParser.LoopOrdering(first.split("unrolln_")[0]));
 						loop.assignments.add(first);
 						done.add(loop);
 						nextBlocks.add(loop);

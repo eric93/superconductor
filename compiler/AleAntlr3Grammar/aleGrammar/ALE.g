@@ -174,14 +174,36 @@ options {
     }
   }
 
+  public static class LoopOrdering {
+      public final String childName;
+      public final String expr;
+      public final HashMap<String,String> _variables;
+
+      public LoopOrdering(String childName_, String expr_, HashMap<String,String> variables_) {
+          childName = childName_;
+          expr = expr_;
+          _variables = variables_;
+      }
+
+      public LoopOrdering(String childName_) {
+          childName = childName_;
+          expr = "";
+          _variables = null;
+      }
+
+      public boolean equals(LoopOrdering other) {
+          return "".equals(this.expr) && "".equals(other.expr) && this.childName.equals(other.childName);
+      }
+  }
+
   public class Assignment {
     public final boolean isReduction;
     public final AGEval.Class _class;
     public final String _sink;
     public final HashMap<String, String> _variables;
     public final String _indexedBody; //arg1, arg2, ...
-    public final String loopVar;
-    public Assignment (AGEval.Class cls, String sink, HashMap<String, String> variables, String indexedBody, String loopVar_) {
+    public final LoopOrdering loopVar;
+    public Assignment (AGEval.Class cls, String sink, HashMap<String, String> variables, String indexedBody, LoopOrdering loopVar_) {
       isReduction = false;
       startVariables = null;
       startBody = "";
@@ -199,7 +221,7 @@ options {
     public final String startBody;
     public final HashMap<String, String> stepVariables;
     public final String stepBody;
-    public Assignment (AGEval.Class cls, String lhs_, HashMap<String, String> startVariables_, String startBody_, HashMap<String, String> stepVariables_, String stepBody_, String loopVar_) {
+    public Assignment (AGEval.Class cls, String lhs_, HashMap<String, String> startVariables_, String startBody_, HashMap<String, String> stepVariables_, String stepBody_, LoopOrdering loopVar_) {
       isReduction = true;
       _variables = null;
       _indexedBody = null;
@@ -436,11 +458,11 @@ phantom[Boolean pure, AGEval.Class clss, ExtendedClass clss2]:
 		  if (!clean.contains("@")) clean = "self@" + clean;
 		  clss2.phantomAttributes.add(clean);
 
-		  String loopVar = clean.split("@")[0].equals("self") ? "" : clean.split("@")[0];
+		  LoopOrdering loopVar = new LoopOrdering(clean.split("@")[0].equals("self") ? "" : clean.split("@")[0]);
 		  HashMap<String,String> atoms = new HashMap<String, String>();
 		  Assignment abstr = new Assignment(clss, $lhs.name, atoms, "0", loopVar);
 		  assignments.add(abstr);
-		  if ("".equals(loopVar)) {
+		  if ("".equals(loopVar.childName)) {
 			clss.apply(clss.getName().toLowerCase() + "_" + $lhs.name.replace('.','_').replace('@','_'),
 			  $lhs.name,
 			  (String[]) atoms.keySet().toArray(new String[atoms.keySet().size()]));
@@ -449,16 +471,16 @@ phantom[Boolean pure, AGEval.Class clss, ExtendedClass clss2]:
 		      String prev = extendedClasses.get(clss).idToLoop.get($lhs.name.replace('.','@'));
 		      if ("".equals(prev)) {
 		        //potentially elevate binding
-		        extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(), loopVar);
-		      } else if ("".equals(loopVar)) { /* maintain binding */ }
-		      else if (!prev.equals(loopVar)) {
+		        extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(), loopVar.childName);
+		      } else if ("".equals(loopVar.childName)) { /* maintain binding */ }
+		      else if (!prev.equals(loopVar.childName) || !"".equals(loopVar.expr)) {
 		         System.err.println("assignment to variable " + clss.getName() + "::" + $lhs.name + " under mismatching loop variables (" + loopVar + " and " + prev + ")");
 	       		 throw new RecognitionException();
 		      } else {
 		         //reuse binding
 		      }
 		    } else {
-		      extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(),loopVar);
+		      extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(),loopVar.childName);
 		    }
 	  	}
 	} )*
@@ -576,7 +598,7 @@ classField[Boolean pure, AGEval.Class container, ExtendedClass eContainer]
 body[Boolean pure, AGEval.Class clss]  : ACTIONS '{' topStmt[$pure, $clss]* '}';
 
 topStmt[Boolean pure, AGEval.Class clss]
-	:  cond[$pure, clss, false, ""]
+	:  cond[$pure, clss, false, new LoopOrdering("")]
 	   {
 	   	if (!$pure) {
 		   ArrayList<Cond> cur;
@@ -588,8 +610,8 @@ topStmt[Boolean pure, AGEval.Class clss]
 		     cur.add($cond.cond);
 		}
 	     }
-	 | constraint[$pure, clss, false, ""]
-	 | loop[$pure, $clss, false, ""]
+	 | constraint[$pure, clss, false, new LoopOrdering("")]
+	 | loop[$pure, $clss, false, new LoopOrdering("")]
 	   {
 	   	if (!$pure) {
 
@@ -604,25 +626,36 @@ topStmt[Boolean pure, AGEval.Class clss]
 	   }
 	 ;
 
-loop[Boolean pure, AGEval.Class clss, boolean inCond, String loopVar] returns [ArrayList<Cond> conds, HashSet<Assignment> assigns]:
+loop[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] returns [ArrayList<Cond> conds, HashSet<Assignment> assigns]:
 	LOOP l=id (STAR { System.err.println("star on loop is deprecated"); })?
+        {
+            String loopExpr = "";
+            HashMap<String,String> loopVariables = null;
+        }
         (BY {HashMap<String, String> loopIterator = new HashMap<String,String>();}
-            callExpr[loopIterator]
-            {System.err.println(loopIterator.toString());})?
+            expr[loopIterator]
+            { 
+              clss.apply(clss.getName().toLowerCase() + "_loop" + clss.uniqueLoopId(),
+			  clss.getName().toLowerCase() + "_loop" + clss.uniqueLoopId(),
+			  (String[]) loopIterator.keySet().toArray(new String[loopIterator.keySet().size()]));
+
+              loopExpr = $expr.openBody;
+              loopVariables = loopIterator;
+            })?
         '{'
 	{
-	  if (!"".equals(loopVar)) {
+	  if (!"".equals(loopVar.childName)) {
 	    System.err.println("no nested loops: violation on " + $l.text);
 	    throw new RecognitionException();
 	  }
 	  $conds = new ArrayList<Cond>();
 	  $assigns = new HashSet<Assignment>();
 	}
-	(   cond[$pure, clss, inCond, $l.text] { $conds.add($cond.cond); }
-	  | constraint[$pure, $clss, inCond, $l.text] { $assigns.add($constraint.abstr); } )*
+	(   cond[$pure, clss, inCond, new LoopOrdering($l.text, loopExpr, loopVariables)] { $conds.add($cond.cond); }
+	  | constraint[$pure, $clss, inCond, new LoopOrdering($l.text, loopExpr, loopVariables)] { $assigns.add($constraint.abstr); } )*
 	'}';
 
-cond[Boolean pure, AGEval.Class clss, boolean inCond, String loopVar] returns [Cond cond]
+cond[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] returns [Cond cond]
 	: IF '('
 	  { ArrayList<Case> elseifs = new ArrayList<Case>();
 	    HashMap<String, String> condVariables = new HashMap<String, String>();
@@ -652,10 +685,10 @@ cond[Boolean pure, AGEval.Class clss, boolean inCond, String loopVar] returns [C
 	  { $cond = new Cond(new Case($t.openBody, condVariables, assigns, conds), new Case(elseAssigns, elseConds), elseifs); }
 	;
 
-constraint[Boolean pure, AGEval.Class clss, boolean inCond, String loopVar] returns [Assignment abstr]
+constraint[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] returns [Assignment abstr]
 	: lhs ASSIGN { HashMap<String, String> atoms = new HashMap<String, String>(); } expr[atoms] ';'
 	  {
-	    if ($lhs.name.contains("[-1]") && "".equals(loopVar)) {
+	    if ($lhs.name.contains("[-1]") && "".equals(loopVar.childName)) {
 	      System.err.println("Fold initializor must be in a loop");
 	      throw new RecognitionException();
 	    }
@@ -664,7 +697,7 @@ constraint[Boolean pure, AGEval.Class clss, boolean inCond, String loopVar] retu
 
 		if (!$pure) {
 		    if (!inCond) assignments.add($abstr);
-		    if (!inCond && "".equals(loopVar)) {
+		    if (!inCond && "".equals(loopVar.childName)) {
 			clss.apply(clss.getName().toLowerCase() + "_" + $lhs.name.replace('.','_').replace('@','_'),
 			  $lhs.name,
 			  (String[]) atoms.keySet().toArray(new String[atoms.keySet().size()]));
@@ -673,21 +706,21 @@ constraint[Boolean pure, AGEval.Class clss, boolean inCond, String loopVar] retu
 		      String prev = extendedClasses.get(clss).idToLoop.get($lhs.name.replace('.','@'));
 		      if ("".equals(prev)) {
 		        //potentially elevate binding
-		        extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(), loopVar);
-		      } else if ("".equals(loopVar)) { /* maintain binding */ }
-		      else if (!prev.equals(loopVar)) {
+		        extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(), loopVar.childName);
+		      } else if ("".equals(loopVar.childName)) { /* maintain binding */ }
+		      else if (!prev.equals(loopVar.childName) || !"".equals(loopVar.expr)) {
 		         System.err.println("assignment to variable " + clss.getName() + "::" + $lhs.name + " under mismatching loop variables (" + loopVar + " and " + prev + ")");
 	       		 throw new RecognitionException();
 		      } else {
 		         //reuse binding
 		      }
 		    } else {
-		      extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(),loopVar);
+		      extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(),loopVar.childName);
 		    }
 		}
 	  }
 	| i=lhs ASSIGN FOLD
-	  { if ("".equals(loopVar)) {
+	  { if ("".equals(loopVar.childName)) {
  	      System.err.println("reduction must be in a loop: violation on " + $lhs.text);
 	      throw new RecognitionException();
 	    }
@@ -710,16 +743,16 @@ constraint[Boolean pure, AGEval.Class clss, boolean inCond, String loopVar] retu
 		      String prev = extendedClasses.get(clss).idToLoop.get($lhs.name.replace('.','@'));
 		      if ("".equals(prev)) {
 		        //potentially elevate binding
-		        extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(), loopVar);
-		      } else if ("".equals(loopVar)) { /* maintain binding */ }
-		      else if (!prev.equals(loopVar)) {
+		        extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(), loopVar.childName);
+		      } else if ("".equals(loopVar.childName)) { /* maintain binding */ }
+		      else if (!prev.equals(loopVar.childName) || !"".equals(loopVar.expr)) {
 		         System.err.println("assignment to variable " + clss.getName() + "::" + $lhs.name + " under mismatching loop variables (" + loopVar + " and " + prev + ")");
 	       		 throw new RecognitionException();
 		      } else {
 		         //reuse binding
 		      }
 		    } else {
-		      extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(),loopVar);
+		      extendedClasses.get(clss).idToLoop.put($lhs.name.replace('.','@').toLowerCase(),loopVar.childName);
 		    }
 		}
 
