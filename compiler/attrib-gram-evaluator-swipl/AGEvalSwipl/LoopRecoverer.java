@@ -317,7 +317,7 @@ public class LoopRecoverer {
 			if (n.contains("_step1")) {
 				String nBase = n.replace("_step1", "");
 				ALEParser.LoopOrdering nLoop = reducts.getVarLoop(c, nBase);
-				if (!keyLoop.equals(nLoop) && "".equals(keyLoop.expr) && "".equals(nLoop.expr)) continue; //FIXME: is this sufficient?				
+				if (!keyLoop.equals(nLoop)) continue;
 				int n0 = AGEvaluatorSwipl.chainLoopsChilds ? -1 : nodes.lastIndexOf(nBase + "_step0");
 				int n1 = nodes.lastIndexOf(nBase + "_step1");
 				int n2 = nodes.lastIndexOf(nBase + "_step2");
@@ -329,7 +329,7 @@ public class LoopRecoverer {
 					if (!((n0 < key1) && (key0 < n1) && (n1 < keyn || keyn == -1) && (key1 < nn || nn == -1))) 
 						continue;				
 				res.add(nBase);				
-			}		
+			}
 		if (!res.contains(key.replace("_stepn", ""))) {
 			for (String n : nodes) 
 				System.err.println("  node: " + n);
@@ -408,7 +408,7 @@ public class LoopRecoverer {
 			maxPostN = Math.max(maxPostN, nodes.indexOf(l + "_stepn")); //FIXME none might not exist if pure writes: do between 1 and 2 instead?
 		}
 		ALEParser.LoopOrdering loopVar = reducts.getVarLoop(c, loopEquivCanonical.iterator().next());
-		int recurIdx = nodes.indexOf(loopVar +"unrolln_recur"); 
+		int recurIdx = nodes.indexOf(loopVar.childName +"unrolln_recur"); 
 		if (maxPreN < recurIdx && maxPostN > recurIdx) {
 			res.add(nodes.get(recurIdx));
 //			System.err.println("Hit!");

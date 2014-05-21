@@ -37,7 +37,7 @@ public class Reductions {
 	
 	public ALEParser.LoopOrdering getVarLoop(AGEval.Class c, String rhsRaw) throws Exception { //without annotations
 		String rhs = rhsRaw.replace("_step1", "_step").replace("_step2", "_step").replace("_stepn", "_step").toLowerCase();
-        // Unneccesary, and doesn't work with new loops
+        // Doesn't work with new loops
 		/*if (rhs.contains("@") && !rhs.contains("self@")) return rhs.split("@")[0];
 		if (rhs.contains("_step")) { //i_step or child_i_step
 			if (rhs.split("_").length == 3) return rhs.split("_")[0];
@@ -46,27 +46,30 @@ public class Reductions {
 			if (rhs.split("_").length == 2) return rhs.split("_")[0];			
 		}*/
 
-        if(rhs.contains("_step"))
+        if (rhs.contains("_step"))
             rhs = rhs.replace("_step","");
-        if(rhs.split("_").length == 2 && !rhs.split("_")[0].equals("self"))
-            rhs = rhs.replace("_","@");
-		
-		ALEParser.LoopOrdering read = allClassLoopListReads.get(c).get(rhs);
-		if (read != null) return read;
-		
+
 		for (Assignment asgn : allLoopStatements) 
-			if (asgn._class == c && asgn._sink.toLowerCase().equals(rhs))
+			if (asgn._class == c && asgn._sink.replace("@","_").toLowerCase().equals(rhs))
 				return asgn.loopVar;
-		
+
+        // If the assignment is just transfer, it's going to be elided anyway, so we don't need
+        // to be careful about what we return.
+		if (!allClassWrites.get(c).contains(rhs)) { //FIXME shouldn't be not !?
+            boolean good = true;
+            for (String w : allClassWrites.get(c)) { 
+                String cmp = c.getName().toLowerCase() + "_" + w.replace("@", "_");
+                if (rhs.equals(cmp)) good = false;
+            }
+            if (good)
+                return new ALEParser.LoopOrdering(rhs.split("_")[0]);
+        }
+
 		System.err.println("Cannot find loop var for: " + rhs);
-		System.err.println(c.getName() + "::reads");
-		for (Entry<String,ALEParser.LoopOrdering> e : allClassLoopListReads.get(c).entrySet()) {
-			System.err.println("  " + e.getKey() + " => " + e.getValue());
-		}
 		System.err.println("Assigns: ");
 		for (Assignment asgn : allLoopStatements) {
 			if (asgn._class == c)
-				System.err.println("  " + asgn._sink);
+				System.err.println("  " + asgn._sink + " => " + asgn.loopVar);
 		}
 		
 		
@@ -186,7 +189,7 @@ public class Reductions {
 			gatherAllReads(asgn._class, asgn._sink, asgn.startVariables, asgn.loopVar);
 			gatherAllReads(asgn._class, asgn._sink, asgn.stepVariables, asgn.loopVar);
 			
-			if ("".equals(asgn.loopVar)) {
+			if ("".equals(asgn.loopVar.childName)) {
 				for (String v : asgn._variables.keySet())
 					  if (v.contains("$$")) accessedAsLast.get(asgn._class).add(v.replace("$$", "").toLowerCase());		
 			} else {

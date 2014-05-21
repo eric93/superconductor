@@ -605,7 +605,7 @@ public class AGEvaluatorSwipl {
 			//simple assignments
 			if (chainLoopsChilds) {
 				for (Assignment a : ast.assignments) {
-					if (a._class == c && a.loopVar.equals("")) {
+					if (a._class == c && a.loopVar.childName.equals("")) {
 						if (a.isReduction) throw new InvalidGrammarException("Reduction in non-loop!");
 						if (a._variables.size() == 0) {						
 							String asgn = "assignment(" + c.getName().toLowerCase() + ", "
@@ -655,7 +655,7 @@ public class AGEvaluatorSwipl {
 			}
 			//loop assignments
 			for (ALEParser.Assignment asgn : ast.assignments)
-				if (asgn._class == c && !"".equals(asgn.loopVar))
+				if (asgn._class == c && !"".equals(asgn.loopVar.childName))
 					res += addLoopAsgn(asgn, ast, reducts);
 			
 			//loop reads (transfers for child.x, errors for non-written self.x$$)

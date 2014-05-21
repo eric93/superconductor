@@ -191,8 +191,9 @@ options {
           _variables = null;
       }
 
-      public boolean equals(LoopOrdering other) {
-          return "".equals(this.expr) && "".equals(other.expr) && this.childName.equals(other.childName);
+      public boolean equals(Object thing) {
+          LoopOrdering other = (LoopOrdering) thing;
+          return this.expr.equals(other.expr) && this.childName.equals(other.childName);
       }
 
       public String toString() {
