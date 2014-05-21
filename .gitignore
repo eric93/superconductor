@@ -21,5 +21,6 @@
 /compiler/tmp-output
 /compiler/output/liblibftl*.dylib
 /compiler/output/css-grammar.*
-/compiler/output/intel-demo*
+/compiler/output/intel-demo.*
+/compiler/output/simple-test.*
 /compiler/output/demo-?d.*
