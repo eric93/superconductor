@@ -83,7 +83,7 @@ topStmt
 	 | loop
 	 ;
 
-loop : LOOP id LBRACE  (cond | constraint | SEMICOLON)* RBRACE;
+loop : LOOP id LBRACE (BY_KEYWORD expr)? (cond | constraint | SEMICOLON)* RBRACE;
 
 
 cond

@@ -50,6 +50,9 @@ public class Class extends IFace{
 	// Visitors in FTL inherited/synthesized passes (always starts w/inherited)
 	protected ArrayList<ArrayList<EvalStep>> ftlVisitors;
 
+    // Used to generate unque loop identifiers
+    protected int loopIndex;
+
 	protected Class(String cls) throws InvalidGrammarException{
 		super(cls);
 		myMappings = new HashMap<String, ArrayList<String>>();
@@ -61,6 +64,7 @@ public class Class extends IFace{
 		privAttributes = new HashMap<String, Vertex.ValueType>();
 		privFields = new HashMap<String, Vertex.ValueType>();
 		childCallOrder = new ArrayList<HashSet<IFace>>();
+        loopIndex = 0;
 	}
 
 	public Class(String cls, IFace iFace) throws InvalidGrammarException{
@@ -86,6 +90,10 @@ public class Class extends IFace{
 			addMappings(dest, src);
 		}
 	}
+
+    public int uniqueLoopId() {
+        return loopIndex++;
+    }
 
 	public void apply(String funcName, String dest){
 		Function newFunc = new Function(funcName, dest);

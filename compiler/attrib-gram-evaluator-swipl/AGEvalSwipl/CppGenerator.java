@@ -166,7 +166,7 @@ public class CppGenerator extends BackendBase  implements Backend {
 		}	
 		
 		for (ALEParser.Assignment asgn : sched._ast.assignments) {
-			if (!"".equals(asgn.loopVar)) {
+			if (!"".equals(asgn.loopVar.childName)) {
 				AGEval.Class cls = asgn._class;
 				String lhsRaw = asgn._sink;
 				String lhs = lhsRaw.toLowerCase();
@@ -1401,17 +1401,17 @@ public String functionHeader (ALEParser.Assignment assign, ALEParser ast) throws
 		" " + fName + " " + params + " { return " + assign._indexedBody + "; }\n";
 }
 
-public String openChildLoop(AGEval.Class parent_class, String loopVar, ALEParser ast) {
-	return "  SFORLOOPALIAS(loopChild, s, ExtraDataHandler::TOK_" + loopVar.toUpperCase() + ", step) {\n";	  
+public String openChildLoop(AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, String loopExpr, ALEParser ast) {
+	return "  SFORLOOPALIAS(loopChild, s, ExtraDataHandler::TOK_" + loopVar.childName.toUpperCase() + ", step) {\n";	  
 }
 
 
-public String closeChildLoop(String loopVar) {
+public String closeChildLoop(ALEParser.LoopOrdering loopVar) {
 	return "  } SFORLOOPALIASEND();";
 }
 
-public String openLastChild(AGEval.Class cls, String loopVar) {
-	return "    if (step == s.data.computeData.classData.Sub" + cls.getName() + ".child_" + loopVar.toLowerCase() + "_count) {\n"; 
+public String openLastChild(AGEval.Class cls, ALEParser.LoopOrdering loopVar) {
+	return "    if (step == s.data.computeData.classData.Sub" + cls.getName() + ".child_" + loopVar.childName.toLowerCase() + "_count) {\n"; 
 }
 
 public String closeLastChild() {

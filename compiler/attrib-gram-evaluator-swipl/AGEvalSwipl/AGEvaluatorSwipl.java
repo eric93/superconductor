@@ -151,12 +151,38 @@ public class AGEvaluatorSwipl {
 			throw new InvalidGrammarException("Use of " + v + " in assignment to " + asgn._class.getName() + "::" + asgn._sink + " illegal: no local reduction definition of " + cleanV + "");
 		}	
 	}
-	
+
+    public static boolean sameLoop(ALEParser.Assignment asgn, String v, ALEParser ast) throws InvalidGrammarException {
+        ALEParser.LoopOrdering thisLoopVar = asgn.loopVar;
+        ALEParser.LoopOrdering otherLoopVar = null;
+
+        v = v.replace("$i","").replace("$-","").replace("$$","").replace("[-1]","");
+        String clss = asgn._class.getName();
+
+        for(ALEParser.Assignment a : ast.assignments) {
+            if( a._class.getName().equals(clss) && a._sink.equals(v)) {
+                otherLoopVar = a.loopVar;
+            }
+        }
+
+        // This only happens if v is a transfer attribute
+        if (otherLoopVar == null) {
+            // System.err.println("Assignments:");
+            // System.err.println(ast.assignments.toString());
+            // throw new InvalidGrammarException("Could not find assignment for var: " + v);
+            return false;
+        }
+
+        if (thisLoopVar.equals(otherLoopVar))
+            return true;
+
+        return false;
+
+    }
 	
 	
 	public static String addLoopAsgnBody(HashMap<String, String> variables, ALEParser.Assignment asgn, ALEParser ast, Reductions reducts) throws InvalidGrammarException{
 		String res = "";
-		
 		
 		//x = .. e_i
 		//  v$i => v_step0 -> x_step0, v_step1 -> x_step1, v_stepn -> v_stepn  (x$i is rejected @ scheduler time)
@@ -164,7 +190,15 @@ public class AGEvaluatorSwipl {
 		//  v$$ => v_stepn -> x_step0
 		//  v   => v -> x_step0
 		//  c.x => c.x -> x_step0 
-		for (String v : variables.keySet()) {
+        //
+        //  Also, we need to add $$ as a dependency if the loops use different orderings
+        HashSet<String> vars = new HashSet<String>();
+        vars.addAll(variables.keySet());
+
+        if (asgn.loopVar._variables != null)
+            vars.addAll(asgn.loopVar._variables.keySet());
+
+		for (String v : vars) {
 		  if (v.contains("$i")) {				  				  
 			  if (attribBase(v).toLowerCase().equals(attribBase(asgn._sink).toLowerCase())
 					  && attribName(v.replace("$i", "")).toLowerCase().equals(attribName(asgn._sink).toLowerCase())) 
@@ -192,6 +226,13 @@ public class AGEvaluatorSwipl {
 					  	+ (attribBase(asgn._sink).equals("self") ? "": (attribBase(asgn._sink).toLowerCase() + "_") ) + attribName(asgn._sink).toLowerCase()+"_stepn" + ", "
 					  	+ "self, "
 					  	+ (attribBase(v).equals("self") ? "": (attribBase(v).toLowerCase() + "_") ) + attribName(vClean).toLowerCase() +"_stepn). %a11\n";														  
+              if(!sameLoop(asgn, v, ast)) {
+                  res += "assignment(" + asgn._class.getName().toLowerCase() + ", "
+                      + "self, " 
+                      + (attribBase(asgn._sink).equals("self") ? "": (attribBase(asgn._sink).toLowerCase() + "_") ) + attribName(asgn._sink).toLowerCase()+"_step0" + ", "
+                      + "self, "
+                      + (attribBase(v).equals("self") ? "": (attribBase(v).toLowerCase() + "_") ) + attribName(vClean).toLowerCase() +"_stepn). %a8\n";														  
+              }
 			  
 		  } else if (v.contains("$-")) {
 			  if (attribBase(v).toLowerCase().equals(attribBase(asgn._sink).toLowerCase())
@@ -220,6 +261,14 @@ public class AGEvaluatorSwipl {
 						  	+ "self, "
 						  	+ (attribBase(v).equals("self") ? "": (attribBase(v).toLowerCase() + "_") ) + attribName(vClean).toLowerCase() +"_step1). %a15\n";														  				  
 			  }
+              if(!sameLoop(asgn, v, ast)) {
+                  res += "assignment(" + asgn._class.getName().toLowerCase() + ", "
+                      + "self, " 
+                      + (attribBase(asgn._sink).equals("self") ? "": (attribBase(asgn._sink).toLowerCase() + "_") ) + attribName(asgn._sink).toLowerCase()+"_step0" + ", "
+                      + "self, "
+                      + (attribBase(v).equals("self") ? "": (attribBase(v).toLowerCase() + "_") ) + attribName(vClean).toLowerCase() +"_stepn). %a8\n";														  
+              }
+
 		  } else if (v.contains("$$")) {
 				checkReducible(asgn, v, ast, reducts);
 				res += "assignment(" + asgn._class.getName().toLowerCase() + ", "
@@ -510,7 +559,7 @@ public class AGEvaluatorSwipl {
 	public void surfaceChecks (Reductions reducts) throws InvalidGrammarException {
 		//1. $-, $i of self variable are only on fold over that variable
 		for (Assignment asgn : ast.assignments) {
-			if (!asgn.loopVar.equals("")) {				
+			if (!asgn.loopVar.childName.equals("")) {				
 				if (asgn.isReduction) {
 					for (String e : asgn.startVariables.keySet())
 						if (attribBase(e).equals("self") && (e.contains("$i") || e.contains("$-"))) 							
@@ -533,7 +582,7 @@ public class AGEvaluatorSwipl {
 		}
 		//2. self loops are reducibles  ( loop child { x = y$$ } is not allowed )
 		for (Assignment asgn : ast.assignments) {
-			if (!asgn.isReduction && !asgn.loopVar.equals("") && attribBase(asgn._sink).equals("self")) {
+			if (!asgn.isReduction && !asgn.loopVar.childName.equals("") && attribBase(asgn._sink).equals("self")) {
 				System.err.println("loop " + asgn.loopVar + " { ... " + asgn._class + "::" + asgn._sink + " := <expr>");
 				throw new InvalidGrammarException("Loop assignments to a self variable must be in a fold (or hoisted out of the loop)");
 			}
@@ -605,7 +654,7 @@ public class AGEvaluatorSwipl {
 			//simple assignments
 			if (chainLoopsChilds) {
 				for (Assignment a : ast.assignments) {
-					if (a._class == c && a.loopVar.equals("")) {
+					if (a._class == c && a.loopVar.childName.equals("")) {
 						if (a.isReduction) throw new InvalidGrammarException("Reduction in non-loop!");
 						if (a._variables.size() == 0) {						
 							String asgn = "assignment(" + c.getName().toLowerCase() + ", "
@@ -655,7 +704,7 @@ public class AGEvaluatorSwipl {
 			}
 			//loop assignments
 			for (ALEParser.Assignment asgn : ast.assignments)
-				if (asgn._class == c && !"".equals(asgn.loopVar))
+				if (asgn._class == c && !"".equals(asgn.loopVar.childName))
 					res += addLoopAsgn(asgn, ast, reducts);
 			
 			//loop reads (transfers for child.x, errors for non-written self.x$$)

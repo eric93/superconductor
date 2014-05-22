@@ -130,7 +130,7 @@
         </javac>
     </target>
 
-   <target name="run-alegen-ftl" depends="ale-swipl, ftl-syn" description="schedule grammar and generate ftl cpp">
+   <target name="run-alegen-ftl" depends="ale-swipl,ftl-syn" description="schedule grammar and generate ftl cpp">
         <java classname="AGEvalSwipl.CppGenerator" fork="yes">
             <env key="SWI_HOME_DIR" value="${swipl.home}"/>
             <classpath>

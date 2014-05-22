@@ -601,7 +601,7 @@ public class AbstractGenerator implements GeneratorI {
 	
 	
 	
-	public void openLoopClean (AGEval.Class cls, String loopVar, 
+	public void openLoopClean (AGEval.Class cls, ALEParser.LoopOrdering loopVar, 
 			AGEvaluatorSwipl.Schedule sched, 
 			LoopRecoverer.Block block,
 			HashMap<String, String> exprToCall, HashMap<String, String> exprPrinter,
@@ -623,11 +623,12 @@ public class AbstractGenerator implements GeneratorI {
 			else 
 				System.err.println("Missing log: " + sClean);				
 		}		
-		res += backend.openChildLoop(cls, loopVar, sched._ast);	
+        
+		res += backend.openChildLoop(cls, loopVar, exprToCall.get(loopVar.expr), sched._ast);	
 		soFar.put(cls, soFar.get(cls) + res);
 	}
 	
-	public void closeLoopClean (AGEval.Class cls, String loopVar, 
+	public void closeLoopClean (AGEval.Class cls, ALEParser.LoopOrdering loopVar, 
 			AGEvaluatorSwipl.Schedule sched, 
 			LoopRecoverer.Block block,			
 			HashMap<String, String> exprToCall, HashMap<String, String> exprPrinter,

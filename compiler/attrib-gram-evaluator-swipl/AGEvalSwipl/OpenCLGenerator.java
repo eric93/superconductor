@@ -347,19 +347,19 @@ public class OpenCLGenerator implements Backend {
 	}
 
 	@Override
-	public String openChildLoop(Class parent_class, String loopVar, ALEParser ast) {
+	public String openChildLoop(Class parent_class, ALEParser.LoopOrdering loopVar, String loopExpr, ALEParser ast) {
 		return "  SFORLOOPALIAS_OCL(index, "
-				+ fields.findClField(parent_class, "child_" + loopVar + "_leftmost_child").getClName() + ", step) {\n";
+				+ fields.findClField(parent_class, "child_" + loopVar.childName + "_leftmost_child").getClName() + ", step) {\n";
 	}
 
 	@Override
-	public String closeChildLoop(String loopVar) {
+	public String closeChildLoop(ALEParser.LoopOrdering loopVar) {
 		return "  } SFORLOOPALIAS_OCL_END();";
 	}
 
 	@Override
-	public String openLastChild(Class cls, String loopVar) {
-		//return "\tif (step == " + fields.findClField(cls, "child_" + loopVar + "_count").getClName() + ") {\n";
+	public String openLastChild(Class cls, ALEParser.LoopOrdering loopVar) {
+		//return "\tif (step == " + fields.findClField(cls, "child_" + loopVar.childName + "_count").getClName() + ") {\n";
 		return "\tif (!GetAbsoluteIndex(right_siblings(current_node), current_node)) {\n";
 	}
 
