@@ -178,17 +178,20 @@ options {
       public final String childName;
       public final String expr;
       public final HashMap<String,String> _variables;
+      public final int id;
 
-      public LoopOrdering(String childName_, String expr_, HashMap<String,String> variables_) {
+      public LoopOrdering(String childName_, String expr_, HashMap<String,String> variables_, int id_) {
           childName = childName_;
           expr = expr_;
           _variables = variables_;
+          id = id_;
       }
 
       public LoopOrdering(String childName_) {
           childName = childName_;
           expr = "";
           _variables = null;
+          id = -1;
       }
 
       public boolean equals(Object thing) {
@@ -238,6 +241,10 @@ options {
       stepVariables = stepVariables_;
       stepBody = stepBody_;
       loopVar = loopVar_;
+    }
+
+    public String toString() {
+        return _sink + ":= ...";
     }
   }
 
@@ -636,15 +643,17 @@ loop[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] retu
         {
             String loopExpr = "";
             HashMap<String,String> loopVariables = null;
+            int id = -1;
         }
         (BY {HashMap<String, String> loopIterator = new HashMap<String,String>();}
             expr[loopIterator]
             { 
+              id = clss.uniqueLoopId();
               clss.apply(clss.getName().toLowerCase() + "_loop" + clss.uniqueLoopId(),
-			  clss.getName().toLowerCase() + "_loop" + clss.uniqueLoopId(),
+			  clss.getName().toLowerCase() + "_loop" + id,
 			  (String[]) loopIterator.keySet().toArray(new String[loopIterator.keySet().size()]));
 
-              loopExpr = $expr.openBody;
+              loopExpr = clss.getName().toLowerCase() + "_loop" + id + "()";
               loopVariables = loopIterator;
             })?
         '{'
@@ -656,8 +665,8 @@ loop[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] retu
 	  $conds = new ArrayList<Cond>();
 	  $assigns = new HashSet<Assignment>();
 	}
-	(   cond[$pure, clss, inCond, new LoopOrdering($l.text, loopExpr, loopVariables)] { $conds.add($cond.cond); }
-	  | constraint[$pure, $clss, inCond, new LoopOrdering($l.text, loopExpr, loopVariables)] { $assigns.add($constraint.abstr); } )*
+	(   cond[$pure, clss, inCond, new LoopOrdering($l.text, loopExpr, loopVariables, id)] { $conds.add($cond.cond); }
+	  | constraint[$pure, $clss, inCond, new LoopOrdering($l.text, loopExpr, loopVariables, id)] { $assigns.add($constraint.abstr); } )*
 	'}';
 
 cond[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] returns [Cond cond]
