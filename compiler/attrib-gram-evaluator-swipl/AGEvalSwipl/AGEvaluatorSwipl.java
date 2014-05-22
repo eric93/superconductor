@@ -194,7 +194,9 @@ public class AGEvaluatorSwipl {
         //  Also, we need to add $$ as a dependency if the loops use different orderings
         HashSet<String> vars = new HashSet<String>();
         vars.addAll(variables.keySet());
-        vars.addAll(asgn.loopVar._variables.keySet());
+
+        if (asgn.loopVar._variables != null)
+            vars.addAll(asgn.loopVar._variables.keySet());
 
 		for (String v : vars) {
 		  if (v.contains("$i")) {				  				  

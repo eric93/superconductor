@@ -347,7 +347,7 @@ public class OpenCLGenerator implements Backend {
 	}
 
 	@Override
-	public String openChildLoop(Class parent_class, ALEParser.LoopOrdering loopVar, ALEParser ast) {
+	public String openChildLoop(Class parent_class, ALEParser.LoopOrdering loopVar, String loopExpr, ALEParser ast) {
 		return "  SFORLOOPALIAS_OCL(index, "
 				+ fields.findClField(parent_class, "child_" + loopVar.childName + "_leftmost_child").getClName() + ", step) {\n";
 	}

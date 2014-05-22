@@ -623,7 +623,8 @@ public class AbstractGenerator implements GeneratorI {
 			else 
 				System.err.println("Missing log: " + sClean);				
 		}		
-		res += backend.openChildLoop(cls, loopVar, sched._ast);	
+        
+		res += backend.openChildLoop(cls, loopVar, exprToCall.get(loopVar.expr), sched._ast);	
 		soFar.put(cls, soFar.get(cls) + res);
 	}
 	

@@ -28,7 +28,7 @@ public interface Backend {
       public String visitBlockFooter(Class cls, ALEParser ast) throws InvalidGrammarException;
 	  public String visitHeader(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException;	  
 	  public String visitFooter(Class cls, int visitNum, ALEParser ast) throws InvalidGrammarException;	  
-	  public String openChildLoop (AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, ALEParser ast);
+	  public String openChildLoop (AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, String loopExpr, ALEParser ast);
 	  public String closeChildLoop (ALEParser.LoopOrdering loopVar);
 	  public String openLastChild(AGEval.Class cls, ALEParser.LoopOrdering loopVar);
 	  public String closeLastChild();

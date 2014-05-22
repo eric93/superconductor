@@ -641,20 +641,14 @@ topStmt[Boolean pure, AGEval.Class clss]
 loop[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] returns [ArrayList<Cond> conds, HashSet<Assignment> assigns]:
 	LOOP l=id (STAR { System.err.println("star on loop is deprecated"); })?
         {
-            String loopExpr = "";
-            HashMap<String,String> loopVariables = null;
-            int id = -1;
+            LoopOrdering ordering = new LoopOrdering($l.text);
+            Assignment fakeAssign = null;
         }
         (BY {HashMap<String, String> loopIterator = new HashMap<String,String>();}
             expr[loopIterator]
             { 
-              id = clss.uniqueLoopId();
-              clss.apply(clss.getName().toLowerCase() + "_loop" + clss.uniqueLoopId(),
-			  clss.getName().toLowerCase() + "_loop" + id,
-			  (String[]) loopIterator.keySet().toArray(new String[loopIterator.keySet().size()]));
-
-              loopExpr = clss.getName().toLowerCase() + "_loop" + id + "()";
-              loopVariables = loopIterator;
+              ordering = new LoopOrdering($l.text, $expr.openBody, loopIterator, clss.uniqueLoopId());
+              fakeAssign = new Assignment(clss, clss.getName() + "_loop_" + ordering.id, loopIterator, $expr.openBody, ordering);
             })?
         '{'
 	{
@@ -664,9 +658,11 @@ loop[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] retu
 	  }
 	  $conds = new ArrayList<Cond>();
 	  $assigns = new HashSet<Assignment>();
+      if (fakeAssign != null)
+          $assigns.add(fakeAssign);
 	}
-	(   cond[$pure, clss, inCond, new LoopOrdering($l.text, loopExpr, loopVariables, id)] { $conds.add($cond.cond); }
-	  | constraint[$pure, $clss, inCond, new LoopOrdering($l.text, loopExpr, loopVariables, id)] { $assigns.add($constraint.abstr); } )*
+	(   cond[$pure, clss, inCond, ordering] { $conds.add($cond.cond); }
+	  | constraint[$pure, $clss, inCond, ordering] { $assigns.add($constraint.abstr); } )*
 	'}';
 
 cond[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] returns [Cond cond]

@@ -206,7 +206,7 @@ public class RustGenerator extends BackendBase implements Backend {
     }
 
 
-    public String openChildLoop (AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, ALEParser ast) {
+    public String openChildLoop (AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, String loopExpr, ALEParser ast) {
 
         AGEval.IFace iface = parent_class.getChildMappings().get(loopVar.childName);
         //System.out.println("Loopvar: " + loopVar);

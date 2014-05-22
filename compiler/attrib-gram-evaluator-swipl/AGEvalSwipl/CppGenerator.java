@@ -1401,7 +1401,7 @@ public String functionHeader (ALEParser.Assignment assign, ALEParser ast) throws
 		" " + fName + " " + params + " { return " + assign._indexedBody + "; }\n";
 }
 
-public String openChildLoop(AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, ALEParser ast) {
+public String openChildLoop(AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, String loopExpr, ALEParser ast) {
 	return "  SFORLOOPALIAS(loopChild, s, ExtraDataHandler::TOK_" + loopVar.childName.toUpperCase() + ", step) {\n";	  
 }
 

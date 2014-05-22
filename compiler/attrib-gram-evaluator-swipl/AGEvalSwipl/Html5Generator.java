@@ -71,7 +71,7 @@ public class Html5Generator extends BackendBase implements Backend {
 	}
 
 	
-	public String openChildLoop (AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, ALEParser ast) {
+	public String openChildLoop (AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, String loopExpr, ALEParser ast) {
 		return   "(function () {\n"
 			   + "    var children = getChildren(node, \"" + loopVar.childName + "\", " + (anyVisitAllowsText(ast) ? "true" : "false") + ");\n"
 			   + "    for (var i = 0; i < children.length; i++) {\n"

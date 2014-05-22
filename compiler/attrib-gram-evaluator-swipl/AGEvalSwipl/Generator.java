@@ -639,7 +639,7 @@ public class Generator implements GeneratorI {
 				System.err.println("Missing log: " + sClean);				
 		}
 		
-		inits += backend.openChildLoop(cls, new ALEParser.LoopOrdering(loopVar), sched._ast);
+		inits += backend.openChildLoop(cls, new ALEParser.LoopOrdering(loopVar), "", sched._ast);
 		
 		openLoops.remove(cls);
 		
