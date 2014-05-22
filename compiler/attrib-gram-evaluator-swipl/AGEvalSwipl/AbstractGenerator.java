@@ -366,8 +366,16 @@ public class AbstractGenerator implements GeneratorI {
 				exprToCall.put(f.getName().toLowerCase(), backend.asgnE(lhs, rhs));
 			}
 		}
+        HashSet<Integer> loopsSeen = new HashSet<Integer>();
 		for (ALEParser.Assignment asgn : sched._ast.assignments) {
-			if (!"".equals(asgn.loopVar)) {
+			if (!"".equals(asgn.loopVar.childName)) {
+                if (!loopsSeen.contains(asgn.loopVar.id)) {
+                    loopsSeen.add(new Integer(asgn.loopVar.id));
+                    //FIXME Does this work with if statements?
+                    if (!asgn.loopVar.expr.equals(""))
+                        exprToCall.put(asgn._class + "_loop_" + asgn.loopVar.id, bindExpr(asgn.loopVar.expr, asgn.loopVar._variables, asgn._class, true, false, "", sched));
+                }
+
 				addAssign(asgn._sink, asgn._class, sched, asgn.isReduction, asgn, null, exprToCall);
 			}
 		}
@@ -624,7 +632,7 @@ public class AbstractGenerator implements GeneratorI {
 				System.err.println("Missing log: " + sClean);				
 		}		
         
-		res += backend.openChildLoop(cls, loopVar, exprToCall.get(loopVar.expr), sched._ast);	
+		res += backend.openChildLoop(cls, loopVar, exprToCall.get(cls.getName() + "_loop_" + loopVar.id), sched._ast);	
 		soFar.put(cls, soFar.get(cls) + res);
 	}
 	

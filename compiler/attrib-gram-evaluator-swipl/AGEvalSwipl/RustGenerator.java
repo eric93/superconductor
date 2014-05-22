@@ -209,10 +209,11 @@ public class RustGenerator extends BackendBase implements Backend {
     public String openChildLoop (AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, String loopExpr, ALEParser ast) {
 
         AGEval.IFace iface = parent_class.getChildMappings().get(loopVar.childName);
-        //System.out.println("Loopvar: " + loopVar);
+        //System.err.println("Loopvar: " + loopVar);
+        //System.err.println("loopExpr: " + loopExpr);
         String ret = "let mut children = util::replace(&mut self." + servoVal(loopVar.childName) + ", FlowList::new());\n";
         ret += "  let mut first = true;\n";
-        ret += "  for child in children.mut_iter() {\n";
+        ret += "  for child in children." + (loopExpr == null ? "mut_iter()" : loopExpr) + " {\n";
         ret += "    let child = mut_base(child);\n";
         return ret;
     }

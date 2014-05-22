@@ -658,8 +658,6 @@ loop[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] retu
 	  }
 	  $conds = new ArrayList<Cond>();
 	  $assigns = new HashSet<Assignment>();
-      if (fakeAssign != null)
-          $assigns.add(fakeAssign);
 	}
 	(   cond[$pure, clss, inCond, ordering] { $conds.add($cond.cond); }
 	  | constraint[$pure, $clss, inCond, ordering] { $assigns.add($constraint.abstr); } )*
