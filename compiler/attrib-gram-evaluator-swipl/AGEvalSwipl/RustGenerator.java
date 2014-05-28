@@ -66,6 +66,11 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("cml",  "box_.as_ref().unwrap().margin.borrow_mut().get().left");
         nameLookup.put("cmr",  "box_.as_ref().unwrap().margin.borrow_mut().get().right");
 
+        nameLookup.put("text", "boxes");
+        nameLookup.put("inlinewidth","border_box.get().size.width");
+        nameLookup.put("inlineascent","get_ascent()");
+        nameLookup.put("inlineheight", "get_lineheight()");
+
         // This can fail, better to use for-in loop in rust
         nameLookup.put("box_", "box_.as_ref().unwrap()");
         nameLookup.put("boxuscore", "boxuscore.as_ref().unwrap()");
@@ -143,6 +148,34 @@ public class RustGenerator extends BackendBase implements Backend {
         return res;
     }
 
+    private String loopIterator(String nextfun, String loopVar) {
+        if (nextfun != null && nextfun.contains("splituscoretouscorewidth")) {
+            return "_split_iter()";
+        } else if (nextfun != null && nextfun.equals("reverse")) {
+            return ".mut_iter().rev()";
+        } else if (loopVar.equals("text")) {
+            return ".mut_iter()";
+        } else {
+            return ".mut_iter().map(|x| mut_base(x))";
+        }
+    }
+
+    private String childType (String loopVar) {
+        //System.err.println("loopvar:" + loopVar);
+        if (loopVar.equals("flowChildren"))
+            return "BaseFlow";
+        if (loopVar.equals("text"))
+            return "Box";
+        return null;
+    }
+
+    private String destructIterator(ALEParser.LoopOrdering loopVar) {
+        if(loopVar.expr.contains("splituscoretouscorewidth"))
+            return "self.end_iter(children);";
+        return "";
+
+    }
+
     public void generateParseFiles(ALEParser ast, Schedule sched, String outputDir, boolean verbose, String functionHeaders) throws InvalidGrammarException {
         //nothing
     }
@@ -211,18 +244,23 @@ public class RustGenerator extends BackendBase implements Backend {
         AGEval.IFace iface = parent_class.getChildMappings().get(loopVar.childName);
         //System.err.println("Loopvar: " + loopVar);
         //System.err.println("loopExpr: " + loopExpr);
-        String ret = "let mut children = util::replace(&mut self." + servoVal(loopVar.childName) + ", FlowList::new());\n";
+        String ret = "  { // Appease the borrow checker\n";
+        ret += "  let mut old_child: Option<&mut " + childType(loopVar.childName) + "> = None;\n";
+        ret += "  let mut children = self." + servoVal(loopVar.childName) + loopIterator(loopExpr,loopVar.childName) + ";\n";
         ret += "  let mut first = true;\n";
-        ret += "  for child in children." + (loopExpr == null ? "mut_iter()" : loopExpr) + " {\n";
-        ret += "    let child = mut_base(child);\n";
+        ret += "  loop {\n";
+        ret += "    let child = match children." + (loopExpr == null ? "next()" : loopExpr) +" { None => {break;} Some(c) => {c} };\n";
+
         return ret;
     }
 
     public String closeChildLoop(ALEParser.LoopOrdering loopVar) {
         String ret = "";
         ret += "    first = false;\n";
+        ret += "    old_child = Some(child);\n";
         ret += "  }\n";
-        ret += "  self." + servoVal(loopVar.childName) + " = children;\n";
+        ret += destructIterator(loopVar) + "\n";
+        ret += "  }\n";
         return ret;
     }
 
@@ -335,7 +373,7 @@ public class RustGenerator extends BackendBase implements Backend {
             return "self." + toBaseVal(cls, prop, propClean) + " = (";
         } else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
             // Children arrays are all assigned to inside loops, so child will be in scope.
-            // We need to assigne to child_prop_last as well, becuase thats where $- is expected next time.
+            // We need to assign to child_prop_last as well, becuase thats where $- is expected next time.
             // Signal this by prepending "\n\nloop_var$\n"
             return "\n\n" + child + "_" + propClean + "_last = " + "child." + servoVal(propClean) + "$\n" +
                 "child." + servoVal(propClean) + " = (";
@@ -415,7 +453,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return  child + "_" + cleanProp;
+                return  child + "_" + cleanProp + "_last";
             else
                 throw new InvalidGrammarException("Cannot access $$ attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -430,7 +468,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return  "(if first { " + child + "_" + cleanProp + "_init } else { " + child + "_" + cleanProp + "_last })";
+                return  "(if first { " + child + "_" + cleanProp + "_init } else { old_child.get_ref()." + servoVal(cleanProp) + " })";
             else
                 throw new InvalidGrammarException("Cannot access $- attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -568,7 +606,8 @@ public class RustGenerator extends BackendBase implements Backend {
             "use layout::ftl_lib::*;\n" +
             "use layout::block::BlockFlow;\n" +
             "use layout::inline::InlineFlow;\n" +
-            "use layout::flow::{mut_base};\n" +
+            "use layout::flow::{mut_base,BaseFlow};\n" +
+            "use layout::box_::Box;\n" +
             "use layout::flow_list::{FlowList};\n" +
             "use layout::model::{specified};\n" +
             "use style::computed_values::{LengthOrPercentageOrAuto,LengthOrPercentage};\n" +

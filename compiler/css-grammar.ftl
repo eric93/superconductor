@@ -23,6 +23,22 @@ interface BaseFlow {
     input screenwidth: Au;
 }
 
+interface InlineBox {
+    var endOfLine : bool;
+    var availableTextWidth : Au;
+    var baseline : Au;
+    var baselineFinal : Au;
+    var lineHeight : Au;
+    var linePosY : Au;
+    var posX : Au;
+    var right : Au;
+    var posY : Au;
+
+    input inlineHeight : Au;
+    input inlineAscent : Au;
+    input inlineWidth : Au;
+}
+
 trait blockWidth{
     actions{
 
@@ -165,6 +181,10 @@ class BlockFlow (blockWidth) : BaseFlow {
 }
 
 class InlineFlow : BaseFlow {
+    children {
+        text : [InlineBox];
+    }
+
     actions {
         flowHeight := Au(0);
         flowWidth := Au(0);
@@ -174,5 +194,29 @@ class InlineFlow : BaseFlow {
         // intrinsMinWidth := Au(0);
         totalHeight := Au(0);
         totalWidth := Au(0);
+
+        loop text by split_to_width(text$-.availableTextWidth, text$-.endOfLine) {
+            text.endOfLine := fold false .. (text$i.inlinewidth > text$-.availableTextWidth);
+            text.availableTextWidth := fold availableWidth .. 
+                (text$-.endOfLine) ? (text$-.availableTextWidth - text$i.inlinewidth) : (availableWidth);
+
+            text.baseline := fold Au(0) .. text$-.endOfLine ? Au(0) : max(text$-.baseline, text$i.inlineAscent);
+        }
+
+        loop text by reverse() {
+            text.baselineFinal := fold Au(0) .. text$i.endOfLine ? text$i.baseline : text$-.baselineFinal;
+        }
+
+        loop text {
+            text.right := fold Au(0) .. text$-.endOfLine ? text$i.inlinewidth : text$-.right + text$i.inlinewidth;
+            text.posX := fold Au(0) .. text$i.right - text$i.inlinewidth;
+            text.lineHeight := fold Au(0) .. text$-.endOfLine ? text$i.inlineHeight : max(text$-.lineHeight, text$i.inlineHeight);
+            text.linePosY := fold Au(0) .. text$-.endOfLine ? (text$-.linePosY + text$-.lineHeight) : text$-.linePosY;
+            text.posY := fold Au(0) .. text$i.linePosY + text$i.baselineFinal - text$i.inlineAscent;
+        }
     }
+}
+
+class TextBox : InlineBox {
+
 }

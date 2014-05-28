@@ -642,13 +642,11 @@ loop[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar] retu
 	LOOP l=id (STAR { System.err.println("star on loop is deprecated"); })?
         {
             LoopOrdering ordering = new LoopOrdering($l.text);
-            Assignment fakeAssign = null;
         }
         (BY {HashMap<String, String> loopIterator = new HashMap<String,String>();}
             expr[loopIterator]
             { 
               ordering = new LoopOrdering($l.text, $expr.openBody, loopIterator, clss.uniqueLoopId());
-              fakeAssign = new Assignment(clss, clss.getName() + "_loop_" + ordering.id, loopIterator, $expr.openBody, ordering);
             })?
         '{'
 	{
@@ -771,7 +769,7 @@ constraint[Boolean pure, AGEval.Class clss, boolean inCond, LoopOrdering loopVar
 
 expr[HashMap<String,String> indexedVariables] returns [String openBody]
 	: c=logExpr[indexedVariables] { boolean hasAny = false; $openBody = $c.openBody; }
-		('?' t=logExpr[indexedVariables] ':' f=logExpr[indexedVariables] {$openBody = "if (" + $openBody + ") {" + $t.openBody + "} else {" + $f.openBody + "}"; } )*
+		('?' t=logExpr[indexedVariables] ':' f=logExpr[indexedVariables] {$openBody = "if (" + $openBody + ") { " + $t.openBody + " } else { " + $f.openBody + " }"; } )*
 	  { if (hasAny) $openBody = "(" + $openBody + ")"; } ;
 
 
