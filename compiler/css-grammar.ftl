@@ -169,9 +169,9 @@ class BlockFlow (blockWidth) : BaseFlow {
 
             flowChildren.availableWidth := fold Au(0) .. computedWidth;
 
-            makeLists := fold 0 .. extendLists(lists, flowChildren$i.myList) +
-                                   extendCollection(lists, flowChildren$i.lists) +
-                                   flowChildren$i.render;
+            makeLists := fold 0 .. extendLists(lists, flowChildren$i.myList)
+                                 + extendCollection(lists, flowChildren$i.lists)
+                                 + flowChildren$i.render;
         }
 
         flowWidth :=  is_root ? screenwidth : computedWidth + pl + pr + bl + br;
@@ -190,9 +190,13 @@ class BlockFlow (blockWidth) : BaseFlow {
 
         lists := newDisplayListCollection();
         myList := newDisplayList();
-        render := addBorder(myList, boxptr, absX + ml, absY + mt, boxWidth, boxHeight,
-                            bt, br, bb, bl) +
-                  extendLists(lists, myList);
+
+        // Adds items to display list layering from bottom up. In this case background
+        // comes before border.
+        render := addBackground(myList, boxptr, absX + ml, absY + mt, boxWidth, boxHeight)
+                + addBorder(myList, boxptr, absX + ml, absY + mt, boxWidth, boxHeight,
+                            bt, br, bb, bl)
+                + extendLists(lists, myList);
     }
 }
 
