@@ -1,13 +1,17 @@
 interface BaseFlow {
     // The position of the upper left corner of the border box of this flow,
     // relative to the containing block.
+    var containingX : Au;
+    var containingY : Au;
+
     var flowHeight : Au;
     var flowWidth : Au;
     var flowX : Au;
     var flowY : Au;
 
-    var containingX : Au;
-    var containingY : Au;
+    // Absolute positioning of border box of this flow
+    var absX : Au;
+    var absY : Au;
 
     var bottom : Au;
     var right : Au;
@@ -19,6 +23,11 @@ interface BaseFlow {
 
     var totalWidth: Au;
     var totalHeight: Au;
+
+    var render : int;
+    var makeLists: int;
+    var lists : DLCE;
+    var myList : DLE;
 
     input screenwidth: Au;
 }
@@ -62,10 +71,11 @@ trait blockWidth{
                            screenwidth:
                            (isAuto(boxStyleWidth) ?
                              // max(intrinsMinWidth, availableWidth) - sumMBP:
-                             availableWidth - sumMBP:
+                             availableWidth - mbpHoriz:
                              selfIntrinsWidth);
 
-        sumMBP := ml + mr + pl + pr + bl + br;
+        mbpVert  := mt + mb + pt + pb + bt + bb;
+        mbpHoriz := ml + mr + pl + pr + bl + br;
 
     }
 }
@@ -75,26 +85,37 @@ class BlockFlow (blockWidth) : BaseFlow {
         flowChildren : [BaseFlow];
     }
     attributes {
+
         var childsHeight : Au;
         var childsWidth : Au;
 
-        /// The position of Block Flow's box relative to its owning flow.
+        input is_root : bool;
+        input boxptr: &Box;
+        input boxStyleHeight : LengthOrPercentageOrAuto;
+        input boxStyleWidth : LengthOrPercentageOrAuto;
+
+        /// The size of Block Flow's box.
         /// The size includes padding and border, but not margin.
         var boxWidth : Au;
         var boxHeight : Au;
         var boxY : Au;
         var boxX : Au;
 
-        input is_root : bool;
-
         var computedWidth : Au;
 
-        input boxStyleHeight : LengthOrPercentageOrAuto;
-        input boxStyleWidth : LengthOrPercentageOrAuto;
+        var childsHeight : Au;
+        var childsWidth : Au;
 
-        var sumMBP : Au;
+        var mbpVert : Au;
+        var mbpHoriz : Au;
         var selfIntrinsWidth : Au;
         var selfIntrinsHeight : Au;
+
+
+        // Margin, padding and border attributes.
+
+        // Full names are the values read from the style file, whereas the
+        // two-letter names are the computed values in Au
 
         input marginTop : LengthOrPercentageOrAuto;
         input marginBottom : LengthOrPercentageOrAuto;
@@ -143,10 +164,15 @@ class BlockFlow (blockWidth) : BaseFlow {
             flowChildren.containingX := fold Au(0) .. flowChildren$i.right - flowChildren$i.totalWidth;
             flowChildren.containingY := fold Au(0) .. flowChildren$i.bottom - flowChildren$i.totalHeight;
 
+            flowChildren.absX := fold Au(0) .. flowChildren$i.containingX + absX + ml;
+            flowChildren.absY := fold Au(0) .. flowChildren$i.containingY + absY + mt;
+
             flowChildren.availableWidth := fold Au(0) .. computedWidth;
 
+            makeLists := fold 0 .. extendLists(lists, flowChildren$i.myList) +
+                                   extendCollection(lists, flowChildren$i.lists) +
+                                   flowChildren$i.render;
         }
-
 
         flowWidth :=  is_root ? screenwidth : computedWidth + pl + pr + bl + br;
         flowHeight := (selfIntrinsHeight == Au(0)) ? childsHeight + pb + pt + bb + bt
@@ -161,18 +187,31 @@ class BlockFlow (blockWidth) : BaseFlow {
         boxHeight := flowHeight;
         boxX := Au(0);
         boxY := Au(0);
+
+        lists := newDisplayListCollection();
+        myList := newDisplayList();
+        render := addBorder(myList, boxptr, absX + ml, absY + mt, boxWidth, boxHeight,
+                            bt, br, bb, bl) +
+                  extendLists(lists, myList);
     }
 }
 
 class InlineFlow : BaseFlow {
     actions {
+
         flowHeight := Au(0);
         flowWidth := Au(0);
         flowX := Au(0);
         flowY := Au(0);
+
         // intrinsPrefWidth := Au(0);
         // intrinsMinWidth := Au(0);
         totalHeight := Au(0);
         totalWidth := Au(0);
+
+        // render := 0;
+        // makeLists := 0;
+        // lists := newDisplayListCollection();
+        // myList := newDisplayList();
     }
 }
