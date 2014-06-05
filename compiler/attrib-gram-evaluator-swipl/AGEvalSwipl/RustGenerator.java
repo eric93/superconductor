@@ -38,47 +38,33 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("flowx", "position.origin.x");
         nameLookup.put("flowy", "position.origin.y");
         nameLookup.put("flowchildren", "base.children");
-        nameLookup.put("boxheight", "box_.as_ref().unwrap().border_box.borrow_mut().get().size.height");
-        nameLookup.put("boxwidth",  "box_.as_ref().unwrap().border_box.borrow_mut().get().size.width");
-        nameLookup.put("boxx", "box_.as_ref().unwrap().border_box.borrow_mut().get().origin.x");
-        nameLookup.put("boxy",  "box_.as_ref().unwrap().border_box.borrow_mut().get().origin.y");
-        nameLookup.put("boxstyleheight", "box_.as_ref().unwrap().style.get().Box.get().height");
-        nameLookup.put("boxstylewidth", "box_.as_ref().unwrap().style.get().Box.get().width");
+        nameLookup.put("boxheight", "fragment.as_ref().unwrap().border_box.borrow_mut().get().size.height");
+        nameLookup.put("boxwidth",  "fragment.as_ref().unwrap().border_box.borrow_mut().get().size.width");
 
-        nameLookup.put("margintop", "box_.as_ref().unwrap().style.get().Margin.get().margin_top");
-        nameLookup.put("marginbottom", "box_.as_ref().unwrap().style.get().Margin.get().margin_bottom");
-        nameLookup.put("marginleft", "box_.as_ref().unwrap().style.get().Margin.get().margin_left");
-        nameLookup.put("marginright", "box_.as_ref().unwrap().style.get().Margin.get().margin_right");
+        nameLookup.put("boxstyleheight", "fragment.style().get_box().height");
+        nameLookup.put("boxstylewidth",  "fragment.style().get_box().width");
 
-        nameLookup.put("paddingtop", "box_.as_ref().unwrap().style.get().Padding.get().padding_top");
-        nameLookup.put("paddingbottom", "box_.as_ref().unwrap().style.get().Padding.get().padding_bottom");
-        nameLookup.put("paddingleft", "box_.as_ref().unwrap().style.get().Padding.get().padding_left");
-        nameLookup.put("paddingright", "box_.as_ref().unwrap().style.get().Padding.get().padding_right");
+        nameLookup.put("margintop",    "fragment.style().get_margin().margin_top");
+        nameLookup.put("marginbottom", "fragment.style().get_margin().margin_bottom");
+        nameLookup.put("marginleft",   "fragment.style().get_margin().margin_left");
+        nameLookup.put("marginright",  "fragment.style().get_margin().margin_right");
 
-        nameLookup.put("bordertop",    "box_.as_ref().unwrap().style.get().Border.get().border_top_width");
-        nameLookup.put("borderbottom", "box_.as_ref().unwrap().style.get().Border.get().border_bottom_width");
-        nameLookup.put("borderleft",   "box_.as_ref().unwrap().style.get().Border.get().border_left_width");
-        nameLookup.put("borderright",  "box_.as_ref().unwrap().style.get().Border.get().border_right_width");
+        nameLookup.put("paddingtop",    "fragment.style().get_padding().padding_top");
+        nameLookup.put("paddingbottom", "fragment.style().get_padding().padding_bottom");
+        nameLookup.put("paddingleft",   "fragment.style().get_padding().padding_left");
+        nameLookup.put("paddingright",  "fragment.style().get_padding().padding_right");
 
-        nameLookup.put("cpt",  "box_.as_ref().unwrap().padding.borrow_mut().get().top");
-        nameLookup.put("cpb",  "box_.as_ref().unwrap().padding.borrow_mut().get().bottom");
-        nameLookup.put("cpl",  "box_.as_ref().unwrap().padding.borrow_mut().get().left");
-        nameLookup.put("cpr",  "box_.as_ref().unwrap().padding.borrow_mut().get().right");
-
-        nameLookup.put("cmt",  "box_.as_ref().unwrap().margin.borrow_mut().get().top");
-        nameLookup.put("cmb",  "box_.as_ref().unwrap().margin.borrow_mut().get().bottom");
-        nameLookup.put("cml",  "box_.as_ref().unwrap().margin.borrow_mut().get().left");
-        nameLookup.put("cmr",  "box_.as_ref().unwrap().margin.borrow_mut().get().right");
-
-        // This can fail, better to use for-in loop in rust
-        nameLookup.put("box_", "box_.as_ref().unwrap()");
-        nameLookup.put("boxptr", "box_.as_ref().unwrap()");
-        nameLookup.put("boxuscore", "boxuscore.as_ref().unwrap()");
+        nameLookup.put("bordertop",    "fragment.style().get_border().border_top_width");
+        nameLookup.put("borderbottom", "fragment.style().get_border().border_bottom_width");
+        nameLookup.put("borderleft",   "fragment.style().get_border().border_left_width");
+        nameLookup.put("borderright",  "fragment.style().get_border().border_right_width");
 
         notFtlAttrs = new HashSet<String>();
         notFtlAttrs.add("is_root");
         notFtlAttrs.add("screenwidth");
         notFtlAttrs.add("position");
+        notFtlAttrs.add("display_list");
+        notFtlAttrs.add("fragment");
 
         // Types that are always mutably borrowed in function headers
         // If Type is in this set,
@@ -87,8 +73,7 @@ public class RustGenerator extends BackendBase implements Backend {
         //     _ale_arg0: Type
 
         borrowMutTypes = new HashSet<String>();
-        borrowMutTypes.add("DLE");
-        borrowMutTypes.add("DLCE");
+        borrowMutTypes.add("DisplayList");
 
         // Attributes that are always mutably borrowed in function calls
         // If attr is in this set,
@@ -97,8 +82,8 @@ public class RustGenerator extends BackendBase implements Backend {
         //     function(attr)
 
         borrowMutAttrs = new HashSet<String>();
-        borrowMutAttrs.add("lists");
-        borrowMutAttrs.add("myList");
+        borrowMutAttrs.add("displayuscorelist");
+        borrowMutAttrs.add("fragment");
     }
 
     private String servoVal(String val) {
@@ -120,10 +105,6 @@ public class RustGenerator extends BackendBase implements Backend {
             return "false";
         if (type.equals("int"))
             return "0";
-        if (type.equals("DLE"))
-            return "DisplayList::<OpaqueNode>::new()";
-        if (type.equals("DLCE"))
-            return "DisplayListCollection::<OpaqueNode>::new()";
 
 
         return type + "::new()";
@@ -141,7 +122,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
         for (String attr : attrs) {
             String type = Generator.extendedGet(ast, iface, attr).strType;
-            res += "  " + attr + ": "+ type +",\n";
+            res += "  pub " + attr + ": "+ type +",\n";
         }
 
         res += "}\n\n";
@@ -239,7 +220,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
         AGEval.IFace iface = parent_class.getChildMappings().get(loopVar);
         //System.out.println("Loopvar: " + loopVar);
-        String ret = "let mut children = util::replace(&mut self." + servoVal(loopVar) + ", FlowList::new());\n";
+        String ret = "let mut children = mem::replace(&mut self." + servoVal(loopVar) + ", FlowList::new());\n";
         ret += "  let mut first = true;\n";
         ret += "  for child in children.mut_iter() {\n";
         ret += "    let child = mut_base(child);\n";
@@ -277,9 +258,8 @@ public class RustGenerator extends BackendBase implements Backend {
 
         // Hack to get rid of rust compiler errors, this cannot be borrowed again
         if (rhs.contains("borrowuscoremut()") ||
-            rhs.contains("self.base.ftluscoreattrs.lists") ||
-            rhs.contains("self.base.ftluscoreattrs.mylist") ||
-            rhs.contains("self.boxuscore.asuscoreref().unwrap()")) {
+            rhs.contains("self.base.displayuscorelist") ||
+            rhs.contains("self.fragment")) {
             return "";
         }
 
@@ -607,14 +587,12 @@ public class RustGenerator extends BackendBase implements Backend {
             "use layout::inline::InlineFlow;\n" +
             "use layout::flow::{mut_base};\n" +
             "use layout::flow_list::{FlowList};\n" +
-            "use layout::box_::Box;\n" +
+            "use layout::fragment::Fragment;\n" +
             "use layout::model::{specified};\n" +
-            "use layout::util::OpaqueNode;\n" +
-            "use layout::display_list_builder::ExtraDisplayListData;\n" +
             "use style::computed_values::{LengthOrPercentageOrAuto,LengthOrPercentage};\n" +
             "use servo_util::geometry::Au;\n" +
-            "use gfx::display_list::{DisplayListCollection, DisplayList};\n" +
-            "use std::util;\n\n";
+            "use gfx::display_list::{DisplayList};\n" +
+            "use std::mem;\n\n";
 
         res += "pub trait FtlNode {\n";
         res += "  fn with_all_children(&mut self, func: |&mut FtlNode|);\n";

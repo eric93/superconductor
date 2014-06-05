@@ -26,8 +26,8 @@ interface BaseFlow {
 
     var render : int;
     var makeLists: int;
-    var lists : DLCE;
-    var myList : DLE;
+
+    var display_list: DisplayList;
 
     input screenwidth: Au;
 }
@@ -90,16 +90,14 @@ class BlockFlow (blockWidth) : BaseFlow {
         var childsWidth : Au;
 
         input is_root : bool;
-        input boxptr: &Box;
+        input fragment: &Fragment;
         input boxStyleHeight : LengthOrPercentageOrAuto;
         input boxStyleWidth : LengthOrPercentageOrAuto;
 
         /// The size of Block Flow's box.
         /// The size includes padding and border, but not margin.
-        var boxWidth : Au;
-        var boxHeight : Au;
-        var boxY : Au;
-        var boxX : Au;
+        // var boxWidth : Au;
+        // var boxHeight : Au;
 
         var computedWidth : Au;
 
@@ -169,8 +167,7 @@ class BlockFlow (blockWidth) : BaseFlow {
 
             flowChildren.availableWidth := fold Au(0) .. computedWidth;
 
-            makeLists := fold 0 .. extendLists(lists, flowChildren$i.myList)
-                                 + extendCollection(lists, flowChildren$i.lists)
+            makeLists := fold 0 .. mergeLists(display_list, flowChildren$i.display_list)
                                  + flowChildren$i.render;
         }
 
@@ -183,20 +180,16 @@ class BlockFlow (blockWidth) : BaseFlow {
         totalWidth := flowWidth + ml + mr;
         totalHeight := flowHeight + mt + mb;
 
-        boxWidth := flowWidth;
-        boxHeight := flowHeight;
-        boxX := Au(0);
-        boxY := Au(0);
+        //boxWidth := flowWidth;
+        //boxHeight := flowHeight;
 
-        lists := newDisplayListCollection();
-        myList := newDisplayList();
+        display_list := newDisplayList();
 
         // Adds items to display list layering from bottom up. In this case background
         // comes before border.
-        render := addBackground(myList, boxptr, absX + ml, absY + mt, boxWidth, boxHeight)
-                + addBorder(myList, boxptr, absX + ml, absY + mt, boxWidth, boxHeight,
-                            bt, br, bb, bl)
-                + extendLists(lists, myList);
+        render := addBackground(display_list, fragment, absX + ml, absY + mt, flowWidth, flowHeight)
+                + addBorder(display_list, fragment, absX + ml, absY + mt, flowWidth, flowHeight,
+                            bt, br, bb, bl);
     }
 }
 
@@ -208,14 +201,7 @@ class InlineFlow : BaseFlow {
         flowX := Au(0);
         flowY := Au(0);
 
-        // intrinsPrefWidth := Au(0);
-        // intrinsMinWidth := Au(0);
         totalHeight := Au(0);
         totalWidth := Au(0);
-
-        // render := 0;
-        // makeLists := 0;
-        // lists := newDisplayListCollection();
-        // myList := newDisplayList();
     }
 }
