@@ -80,6 +80,18 @@ trait blockWidth{
     }
 }
 
+trait defaultBaseValues {
+    actions {
+        flowHeight := Au(0);
+        flowWidth := Au(0);
+        flowX := Au(0);
+        flowY := Au(0);
+
+        totalHeight := Au(0);
+        totalWidth := Au(0);
+    }
+}
+
 class BlockFlow (blockWidth) : BaseFlow {
     children {
         flowChildren : [BaseFlow];
@@ -193,15 +205,13 @@ class BlockFlow (blockWidth) : BaseFlow {
     }
 }
 
-class InlineFlow : BaseFlow {
-    actions {
+class InlineFlow (defaultBaseValues) : BaseFlow {}
+class TableColGroupFlow (defaultBaseValues) : BaseFlow {}
 
-        flowHeight := Au(0);
-        flowWidth := Au(0);
-        flowX := Au(0);
-        flowY := Au(0);
 
-        totalHeight := Au(0);
-        totalWidth := Au(0);
-    }
-}
+//class TableWrapperFlow {}
+//class TableFlow {}
+//class TableRowGroupFlow {}
+//class TableRowFlow {}
+//class TableCaptionFlow {}
+//class TableCellFlow {}

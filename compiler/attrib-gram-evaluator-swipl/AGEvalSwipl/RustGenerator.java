@@ -187,7 +187,7 @@ public class RustGenerator extends BackendBase implements Backend {
             child_ifaces.add(child_iface);
         }
 
-        String res = "impl FtlNode" + " for " + cls.getName() + "{\n";
+        String res = "impl FtlNode" + " for " + cls.getName() + " {\n";
         res += " fn with_all_children(&mut self, func: |&mut FtlNode|) {\n";
 
         for (AGEval.IFace child_iface : child_ifaces) {
@@ -585,6 +585,13 @@ public class RustGenerator extends BackendBase implements Backend {
             "use layout::ftl_lib::*;\n" +
             "use layout::block::BlockFlow;\n" +
             "use layout::inline::InlineFlow;\n" +
+            //"use layout::table_wrapper::TableWrapperFlow;\n" +
+            //"use layout::table::TableFlow;\n" +
+            "use layout::table_colgroup::TableColGroupFlow;\n" +
+            //"use layout::table_rowgroup::TableRowGroupFlow;\n" +
+            //"use layout::table_row::TableRowFlow;\n" +
+            //"use layout::table_caption::TableCaptionFlow;\n" +
+            //"use layout::table_cell::TableCellFlow;\n" +
             "use layout::flow::{mut_base};\n" +
             "use layout::flow_list::{FlowList};\n" +
             "use layout::fragment::Fragment;\n" +
