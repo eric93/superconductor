@@ -26,64 +26,65 @@ public class RustGenerator extends BackendBase implements Backend {
 
     private Hashtable<String, String> nameLookup;
     private HashSet<String> notFtlAttrs;
+    private HashSet<String> borrowMutAttrs;
+    private HashSet<String> borrowMutTypes;
 
     public RustGenerator() {
+
+        // Replace our attribute names with servo ones
         nameLookup = new Hashtable<String, String>();
         nameLookup.put("flowheight", "position.size.height");
         nameLookup.put("flowwidth", "position.size.width");
         nameLookup.put("flowx", "position.origin.x");
         nameLookup.put("flowy", "position.origin.y");
         nameLookup.put("flowchildren", "base.children");
-        nameLookup.put("boxheight", "box_.as_ref().unwrap().border_box.borrow_mut().get().size.height");
-        nameLookup.put("boxwidth",  "box_.as_ref().unwrap().border_box.borrow_mut().get().size.width");
-        nameLookup.put("boxx", "box_.as_ref().unwrap().border_box.borrow_mut().get().origin.x");
-        nameLookup.put("boxy",  "box_.as_ref().unwrap().border_box.borrow_mut().get().origin.y");
-        nameLookup.put("boxstyleheight", "box_.as_ref().unwrap().style.get().Box.get().height");
-        nameLookup.put("boxstylewidth", "box_.as_ref().unwrap().style.get().Box.get().width");
 
-        nameLookup.put("margintop", "box_.as_ref().unwrap().style.get().Margin.get().margin_top");
-        nameLookup.put("marginbottom", "box_.as_ref().unwrap().style.get().Margin.get().margin_bottom");
-        nameLookup.put("marginleft", "box_.as_ref().unwrap().style.get().Margin.get().margin_left");
-        nameLookup.put("marginright", "box_.as_ref().unwrap().style.get().Margin.get().margin_right");
+        nameLookup.put("boxheight", "fragment.as_ref().unwrap().border_box.borrow_mut().get().size.height");
+        nameLookup.put("boxwidth",  "fragment.as_ref().unwrap().border_box.borrow_mut().get().size.width");
 
-        nameLookup.put("paddingtop", "box_.as_ref().unwrap().style.get().Padding.get().padding_top");
-        nameLookup.put("paddingbottom", "box_.as_ref().unwrap().style.get().Padding.get().padding_bottom");
-        nameLookup.put("paddingleft", "box_.as_ref().unwrap().style.get().Padding.get().padding_left");
-        nameLookup.put("paddingright", "box_.as_ref().unwrap().style.get().Padding.get().padding_right");
+        nameLookup.put("boxstyleheight", "fragment.style().get_box().height");
+        nameLookup.put("boxstylewidth",  "fragment.style().get_box().width");
 
-        nameLookup.put("bordertop",    "box_.as_ref().unwrap().style.get().Border.get().border_top_width");
-        nameLookup.put("borderbottom", "box_.as_ref().unwrap().style.get().Border.get().border_bottom_width");
-        nameLookup.put("borderleft",   "box_.as_ref().unwrap().style.get().Border.get().border_left_width");
-        nameLookup.put("borderright",  "box_.as_ref().unwrap().style.get().Border.get().border_right_width");
+        nameLookup.put("margintop",    "fragment.style().get_margin().margin_top");
+        nameLookup.put("marginbottom", "fragment.style().get_margin().margin_bottom");
+        nameLookup.put("marginleft",   "fragment.style().get_margin().margin_left");
+        nameLookup.put("marginright",  "fragment.style().get_margin().margin_right");
 
-        nameLookup.put("cpt",  "box_.as_ref().unwrap().padding.borrow_mut().get().top");
-        nameLookup.put("cpb",  "box_.as_ref().unwrap().padding.borrow_mut().get().bottom");
-        nameLookup.put("cpl",  "box_.as_ref().unwrap().padding.borrow_mut().get().left");
-        nameLookup.put("cpr",  "box_.as_ref().unwrap().padding.borrow_mut().get().right");
+        nameLookup.put("paddingtop",    "fragment.style().get_padding().padding_top");
+        nameLookup.put("paddingbottom", "fragment.style().get_padding().padding_bottom");
+        nameLookup.put("paddingleft",   "fragment.style().get_padding().padding_left");
+        nameLookup.put("paddingright",  "fragment.style().get_padding().padding_right");
 
-        nameLookup.put("cmt",  "box_.as_ref().unwrap().margin.borrow_mut().get().top");
-        nameLookup.put("cmb",  "box_.as_ref().unwrap().margin.borrow_mut().get().bottom");
-        nameLookup.put("cml",  "box_.as_ref().unwrap().margin.borrow_mut().get().left");
-        nameLookup.put("cmr",  "box_.as_ref().unwrap().margin.borrow_mut().get().right");
-
-        nameLookup.put("text", "boxes");
-        nameLookup.put("inlinewidth","border_box.get().size.width");
-        nameLookup.put("inlineascent","get_ascent()");
-        nameLookup.put("inlineheight", "get_lineheight()");
-
-        // This can fail, better to use for-in loop in rust
-        nameLookup.put("box_", "box_.as_ref().unwrap()");
-        nameLookup.put("boxuscore", "boxuscore.as_ref().unwrap()");
+        nameLookup.put("bordertop",    "fragment.style().get_border().border_top_width");
+        nameLookup.put("borderbottom", "fragment.style().get_border().border_bottom_width");
+        nameLookup.put("borderleft",   "fragment.style().get_border().border_left_width");
+        nameLookup.put("borderright",  "fragment.style().get_border().border_right_width");
 
         notFtlAttrs = new HashSet<String>();
-        // notFtlAttrs.add("flowposition");
-        // notFtlAttrs.add("flowheight");
-        // notFtlAttrs.add("flowwidth");
-        // notFtlAttrs.add("flowx");
-        // notFtlAttrs.add("flowy");
         notFtlAttrs.add("is_root");
         notFtlAttrs.add("screenwidth");
         notFtlAttrs.add("position");
+        notFtlAttrs.add("display_list");
+        notFtlAttrs.add("fragment");
+
+        // Types that are always mutably borrowed in function headers
+        // If Type is in this set,
+        //     _ale_arg0: &mut Type
+        // would be generated instead of
+        //     _ale_arg0: Type
+
+        borrowMutTypes = new HashSet<String>();
+        borrowMutTypes.add("DisplayList");
+
+        // Attributes that are always mutably borrowed in function calls
+        // If attr is in this set,
+        //     function(&mut attr)
+        // would be generated instead of
+        //     function(attr)
+
+        borrowMutAttrs = new HashSet<String>();
+        borrowMutAttrs.add("displayuscorelist");
+        borrowMutAttrs.add("fragment");
     }
 
     private String servoVal(String val) {
@@ -103,6 +104,9 @@ public class RustGenerator extends BackendBase implements Backend {
             return "Au::new(0)";
         if (type.equals("bool"))
             return "false";
+        if (type.equals("int"))
+            return "0";
+
 
         return type + "::new()";
     }
@@ -119,7 +123,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
         for (String attr : attrs) {
             String type = Generator.extendedGet(ast, iface, attr).strType;
-            res += "  " + attr + ": "+ type +",\n";
+            res += "  pub " + attr + ": "+ type +",\n";
         }
 
         res += "}\n\n";
@@ -160,13 +164,13 @@ public class RustGenerator extends BackendBase implements Backend {
         }
     }
 
-    private String childType (String loopVar) {
+    private String childType (String loopVar) throws InvalidGrammarException {
         //System.err.println("loopvar:" + loopVar);
-        if (loopVar.equals("flowChildren"))
+        if (loopVar.toLowerCase().equals("flowchildren"))
             return "BaseFlow";
         if (loopVar.equals("text"))
             return "Box";
-        return null;
+        throw new InvalidGrammarException("Loop variable not entered in RustGenerator.java: " + loopVar);
     }
 
     private String destructIterator(ALEParser.LoopOrdering loopVar) {
@@ -193,7 +197,9 @@ public class RustGenerator extends BackendBase implements Backend {
             //System.out.println(fName + params);
             String type = Generator.extendedGet(ast, assign._class, arg).strType;
 
-            params +=  " " + assign._variables.get(arg) + ": " + type;
+            String borrowMut = borrowMutTypes.contains(type) ? "&mut " : "";
+
+            params +=  " " + assign._variables.get(arg) + ": " + borrowMut + type;
         }
         params += ")";
 
@@ -210,7 +216,7 @@ public class RustGenerator extends BackendBase implements Backend {
             child_ifaces.add(child_iface);
         }
 
-        String res = "impl FtlNode" + " for " + cls.getName() + "{\n";
+        String res = "impl FtlNode" + " for " + cls.getName() + " {\n";
         res += " fn with_all_children(&mut self, func: |&mut FtlNode|) {\n";
 
         for (AGEval.IFace child_iface : child_ifaces) {
@@ -239,7 +245,8 @@ public class RustGenerator extends BackendBase implements Backend {
     }
 
 
-    public String openChildLoop (AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, String loopExpr, ALEParser ast) {
+    public String openChildLoop (AGEval.Class parent_class, ALEParser.LoopOrdering loopVar, String loopExpr, ALEParser ast)
+        throws InvalidGrammarException {
 
         AGEval.IFace iface = parent_class.getChildMappings().get(loopVar.childName);
         //System.err.println("Loopvar: " + loopVar);
@@ -247,6 +254,11 @@ public class RustGenerator extends BackendBase implements Backend {
         String ret = "  { // Appease the borrow checker\n";
         ret += "  let mut old_child: Option<&mut " + childType(loopVar.childName) + "> = None;\n";
         ret += "  let mut children = self." + servoVal(loopVar.childName) + loopIterator(loopExpr,loopVar.childName) + ";\n";
+
+        //AGEval.IFace iface = parent_class.getChildMappings().get(loopVar);
+        //System.out.println("Loopvar: " + loopVar);
+        //String ret = "let mut children = mem::replace(&mut self." + servoVal(loopVar) + ", FlowList::new());\n";
+
         ret += "  let mut first = true;\n";
         ret += "  loop {\n";
         ret += "    let child = match children." + (loopExpr == null ? "next()" : loopExpr) +" { None => {break;} Some(c) => {c} };\n";
@@ -286,7 +298,9 @@ public class RustGenerator extends BackendBase implements Backend {
         }
 
         // Hack to get rid of rust compiler errors, this cannot be borrowed again
-        if (rhs.contains("borrowuscoremut()")) {
+        if (rhs.contains("borrowuscoremut()") ||
+            rhs.contains("self.base.displayuscorelist") ||
+            rhs.contains("self.fragment")) {
             return "";
         }
 
@@ -448,12 +462,18 @@ public class RustGenerator extends BackendBase implements Backend {
 
         String baseval = toBaseVal(cls, originalProp, cleanProp);
 
+        String borrowMut = "";
+
+        if (borrowMutAttrs.contains(originalProp)) {
+            borrowMut = "&mut ";
+        }
+
         // Special cases for loop elements
         if (prop.contains("$$")) {
             if (isParent)
-                return "self." + baseval;
+                return borrowMut + "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return  child + "_" + cleanProp + "_last";
+                return borrowMut +  child + "_" + cleanProp + "_last";
             else
                 throw new InvalidGrammarException("Cannot access $$ attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -461,14 +481,14 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 throw new InvalidGrammarException("Cannot access $i of self in class: " + cls.getName());
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return "child." + servoVal(cleanProp);
+                return borrowMut + "child." + servoVal(cleanProp);
             else
                 throw new InvalidGrammarException("Cannot access $i attrib of a non-multi child: " + cls.getName());
         } else if (prop.contains("$-")) {
             if (isParent)
-                return "self." + baseval;
+                return borrowMut + "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return  "(if first { " + child + "_" + cleanProp + "_init } else { old_child.get_ref()." + servoVal(cleanProp) + " })";
+                return borrowMut +  "(if first { " + child + "_" + cleanProp + "_init } else { old_child.get_ref()." + servoVal(cleanProp) + " })";
             else
                 throw new InvalidGrammarException("Cannot access $- attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -477,16 +497,16 @@ public class RustGenerator extends BackendBase implements Backend {
         } else {
             // Initial loop values are local variables.
             if (cleanProp.contains("_init") || cleanProp.contains("_last")) {
-                return cleanProp;
+                return borrowMut + cleanProp;
             }
 
             // We can assume here that the attribute is not a special loop construct.
             if (isParent)
-                return "self." + baseval;
+                return borrowMut + "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return "child." + servoVal(cleanProp);
+                return borrowMut + "child." + servoVal(cleanProp);
             else
-                return "self." + child + "." + servoVal(cleanProp);
+                return borrowMut + "self." + child + "." + servoVal(cleanProp);
         }
     }
 
@@ -606,13 +626,21 @@ public class RustGenerator extends BackendBase implements Backend {
             "use layout::ftl_lib::*;\n" +
             "use layout::block::BlockFlow;\n" +
             "use layout::inline::InlineFlow;\n" +
+            //"use layout::table_wrapper::TableWrapperFlow;\n" +
+            //"use layout::table::TableFlow;\n" +
+            "use layout::table_colgroup::TableColGroupFlow;\n" +
+            //"use layout::table_rowgroup::TableRowGroupFlow;\n" +
+            //"use layout::table_row::TableRowFlow;\n" +
+            //"use layout::table_caption::TableCaptionFlow;\n" +
+            //"use layout::table_cell::TableCellFlow;\n" +
             "use layout::flow::{mut_base,BaseFlow};\n" +
-            "use layout::box_::Box;\n" +
             "use layout::flow_list::{FlowList};\n" +
+            "use layout::fragment::Fragment;\n" +
             "use layout::model::{specified};\n" +
             "use style::computed_values::{LengthOrPercentageOrAuto,LengthOrPercentage};\n" +
             "use servo_util::geometry::Au;\n" +
-            "use std::util;\n\n";
+            "use gfx::display_list::{DisplayList};\n" +
+            "use std::mem;\n\n";
 
         res += "pub trait FtlNode {\n";
         res += "  fn with_all_children(&mut self, func: |&mut FtlNode|);\n";
