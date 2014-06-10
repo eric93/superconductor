@@ -60,6 +60,11 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("borderleft",   "fragment.style().get_border().border_left_width");
         nameLookup.put("borderright",  "fragment.style().get_border().border_right_width");
 
+        nameLookup.put("text", "fragments.fragments");
+        nameLookup.put("inlinewidth","border_box.size.width");
+        nameLookup.put("inlineascent","get_ascent()");
+        nameLookup.put("inlineheight", "get_lineheight()");
+
         notFtlAttrs = new HashSet<String>();
         notFtlAttrs.add("is_root");
         notFtlAttrs.add("screenwidth");
@@ -169,13 +174,13 @@ public class RustGenerator extends BackendBase implements Backend {
         if (loopVar.toLowerCase().equals("flowchildren"))
             return "BaseFlow";
         if (loopVar.equals("text"))
-            return "Box";
+            return "Fragment";
         throw new InvalidGrammarException("Loop variable not entered in RustGenerator.java: " + loopVar);
     }
 
     private String destructIterator(ALEParser.LoopOrdering loopVar) {
         if(loopVar.expr.contains("splituscoretouscorewidth"))
-            return "self.end_iter(children);";
+            return "self.fragments.end_iter(children);";
         return "";
 
     }
