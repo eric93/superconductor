@@ -89,6 +89,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
         borrowMutAttrs = new HashSet<String>();
         borrowMutAttrs.add("displayuscorelist");
+        borrowMutAttrs.add("nodeuscorelist");
         borrowMutAttrs.add("fragment");
     }
 
@@ -305,6 +306,7 @@ public class RustGenerator extends BackendBase implements Backend {
         // Hack to get rid of rust compiler errors, this cannot be borrowed again
         if (rhs.contains("borrowuscoremut()") ||
             rhs.contains("self.base.displayuscorelist") ||
+            rhs.contains("self.base.ftluscoreattrs.nodeuscorelist") ||
             rhs.contains("self.fragment")) {
             return "";
         }
@@ -639,13 +641,11 @@ public class RustGenerator extends BackendBase implements Backend {
             //"use layout::table_caption::TableCaptionFlow;\n" +
             //"use layout::table_cell::TableCellFlow;\n" +
             "use layout::flow::{mut_base,BaseFlow};\n" +
-            "use layout::flow_list::{FlowList};\n" +
             "use layout::fragment::Fragment;\n" +
             "use layout::model::{specified};\n" +
             "use style::computed_values::{LengthOrPercentageOrAuto,LengthOrPercentage};\n" +
             "use servo_util::geometry::Au;\n" +
-            "use gfx::display_list::{DisplayList};\n" +
-            "use std::mem;\n\n";
+            "use gfx::display_list::{DisplayList};\n\n";
 
         res += "pub trait FtlNode {\n";
         res += "  fn with_all_children(&mut self, func: |&mut FtlNode|);\n";

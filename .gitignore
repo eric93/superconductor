@@ -23,4 +23,5 @@
 /compiler/output/css-grammar.*
 /compiler/output/intel-demo.*
 /compiler/output/simple-test.*
+/compiler/output/simple-test2.*
 /compiler/output/demo-?d.*
