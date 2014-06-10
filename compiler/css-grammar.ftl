@@ -24,10 +24,11 @@ interface BaseFlow {
     var totalWidth: Au;
     var totalHeight: Au;
 
-    var render : int;
+    //* var render : int;
     var makeLists: int;
 
     var display_list: DisplayList;
+    //var node_list: DisplayList;
 
     input screenwidth: Au;
 }
@@ -51,8 +52,8 @@ interface InlineBox {
 trait blockWidth{
     actions{
 
-        selfIntrinsWidth := specOrZero(boxStyleWidth, availableWidth);
-        selfIntrinsHeight := specOrZero(boxStyleHeight, Au(0));
+        selfIntrinsWidth := spec_or_zero(boxStyleWidth, availableWidth);
+        selfIntrinsHeight := spec_or_zero(boxStyleHeight, Au(0));
 
         pt := specified(paddingTop, availableWidth);
         pb := specified(paddingBottom, availableWidth);
@@ -64,28 +65,28 @@ trait blockWidth{
         bl := borderLeft;
         br := borderRight;
 
-        mt := isAuto(marginTop) ? Au(0) : specOrZero(marginTop, availableWidth);
-        mb := isAuto(marginBottom) ? Au(0) : specOrZero(marginBottom, availableWidth);
-        ml := isAuto(marginLeft) ?
-                (isAuto(boxStyleWidth) ?
+        mt := is_auto(marginTop) ? Au(0) : spec_or_zero(marginTop, availableWidth);
+        mb := is_auto(marginBottom) ? Au(0) : spec_or_zero(marginBottom, availableWidth);
+        ml := is_auto(marginLeft) ?
+                (is_auto(boxStyleWidth) ?
                   Au(0) :
-                  (isAuto(marginRight) ?
+                  (is_auto(marginRight) ?
                     (availableWidth - pr - pl - bl - br - selfIntrinsWidth) / Au(2) :
-                    (availableWidth - pr - pl - bl - br - selfIntrinsWidth - specOrZero(marginRight, availableWidth)))) :
-                specOrZero(marginLeft, availableWidth);
+                    (availableWidth - pr - pl - bl - br - selfIntrinsWidth - spec_or_zero(marginRight, availableWidth)))) :
+                spec_or_zero(marginLeft, availableWidth);
 
-        mr := (!isAuto(marginRight) && (isAuto(boxStyleWidth) || isAuto(marginLeft))) ?
-                specOrZero(marginRight, availableWidth) :
-                (isAuto(boxStyleWidth) ?
+        mr := (!is_auto(marginRight) && (is_auto(boxStyleWidth) || is_auto(marginLeft))) ?
+                spec_or_zero(marginRight, availableWidth) :
+                (is_auto(boxStyleWidth) ?
                   Au(0) :
-                  (isAuto(marginLeft) ?
+                  (is_auto(marginLeft) ?
                     (availableWidth - pr - pl - br - bl - selfIntrinsWidth) / Au(2) :
-                    (availableWidth - pr - pl - br - bl - selfIntrinsWidth - specOrZero(marginLeft, availableWidth))));
+                    (availableWidth - pr - pl - br - bl - selfIntrinsWidth - spec_or_zero(marginLeft, availableWidth))));
 
 
         computedWidth := is_root ?
                            screenwidth:
-                           (isAuto(boxStyleWidth) ?
+                           (is_auto(boxStyleWidth) ?
                              // max(intrinsMinWidth, availableWidth) - sumMBP:
                              availableWidth - mbpHoriz:
                              selfIntrinsWidth);
@@ -195,8 +196,10 @@ class BlockFlow (blockWidth) : BaseFlow {
 
             flowChildren.availableWidth := fold Au(0) .. computedWidth;
 
-            makeLists := fold 0 .. mergeLists(display_list, flowChildren$i.display_list)
-                                 + flowChildren$i.render;
+            makeLists := fold 0 .. merge_lists(display_list, flowChildren$i.display_list);
+
+            //* makeLists := fold 0 .. merge_lists(display_list, flowChildren$i.display_list)
+            //                      + flowChildren$i.render;
         }
 
         flowWidth :=  is_root ? screenwidth : computedWidth + pl + pr + bl + br;
@@ -211,13 +214,18 @@ class BlockFlow (blockWidth) : BaseFlow {
         //boxWidth := flowWidth;
         //boxHeight := flowHeight;
 
-        display_list := newDisplayList();
+        //* display_list := new_display_list();
 
         // Adds items to display list layering from bottom up. In this case background
         // comes before border.
-        render := addBackground(display_list, fragment, absX + ml, absY + mt, flowWidth, flowHeight)
-                + addBorder(display_list, fragment, absX + ml, absY + mt, flowWidth, flowHeight,
-                            bt, br, bb, bl);
+
+        display_list := add_border(add_background(new_display_list(), fragment, absX + ml,
+                                               absY + mt, flowWidth, flowHeight),
+                                fragment, absX + ml, absY + mt, flowWidth, flowHeight, bt, br, bb, bl);
+
+        //* render := addBackground(display_list, fragment, absX + ml, absY + mt, flowWidth, flowHeight)
+        //         + addBorder(display_list, fragment, absX + ml, absY + mt, flowWidth, flowHeight,
+        //                     bt, br, bb, bl);
     }
 }
 
@@ -244,7 +252,7 @@ class InlineFlow: BaseFlow {
             text.baseline := fold Au(0) .. text$-.endOfLine ? Au(0) : max(text$-.baseline, text$i.inlineAscent);
         }
 
-        loop text by reverse() {
+        loop text by next() {
             text.baselineFinal := fold Au(0) .. text$i.endOfLine ? text$i.baseline : text$-.baselineFinal;
         }
 
@@ -256,10 +264,6 @@ class InlineFlow: BaseFlow {
             text.posY := fold Au(0) .. text$i.linePosY + text$i.baselineFinal - text$i.inlineAscent;
         }
     }
-}
-
-class TextBox : InlineBox {
-
 }
 
 class TableColGroupFlow (defaultBaseValues) : BaseFlow {}
