@@ -4,6 +4,7 @@ interface BaseFlow {
     var containingX : Au;
     var containingY : Au;
 
+    // Width and height of border box
     var flowHeight : Au;
     var flowWidth : Au;
     var flowX : Au;
@@ -21,10 +22,11 @@ interface BaseFlow {
 
     var availableWidth : Au;
 
+    // Width and height of margin box of the flow
     var totalWidth: Au;
     var totalHeight: Au;
 
-    //* var render : int;
+    var render : int;
     var makeLists: int;
 
     var display_list: DisplayList;
@@ -235,33 +237,60 @@ class InlineFlow: BaseFlow {
     }
 
     actions {
-        flowHeight := Au(0);
-        flowWidth := Au(0);
-        flowX := Au(0);
-        flowY := Au(0);
+        flowWidth := availableWidth;
+        flowX := containingX;
+        flowY := containingY;
         // intrinsPrefWidth := Au(0);
         // intrinsMinWidth := Au(0);
-        totalHeight := Au(0);
-        totalWidth := Au(0);
+        totalHeight := flowHeight;
+        totalWidth := flowWidth;
 
         loop text by split_to_width(text$-.availableTextWidth, text$-.endOfLine) {
             text.endOfLine := fold false .. (text$i.inlinewidth > text$-.availableTextWidth);
-            text.availableTextWidth := fold availableWidth ..
-                (text$-.endOfLine) ? (text$-.availableTextWidth - text$i.inlinewidth) : (availableWidth);
 
-            text.baseline := fold Au(0) .. text$-.endOfLine ? Au(0) : max(text$-.baseline, text$i.inlineAscent);
+            text.availableTextWidth := fold availableWidth ..
+                                            (text$-.endOfLine) ?
+                                              (text$-.availableTextWidth - text$i.inlinewidth) :
+                                              (availableWidth);
+
+            text.baseline := fold Au(0) .. text$-.endOfLine ?
+                                             Au(0) :
+                                             max(text$-.baseline, text$i.inlineAscent);
         }
 
         loop text by next() {
-            text.baselineFinal := fold Au(0) .. text$i.endOfLine ? text$i.baseline : text$-.baselineFinal;
+            text.baselineFinal := fold Au(0) .. text$i.endOfLine ?
+                                                  text$i.baseline :
+                                                  text$-.baselineFinal;
         }
 
         loop text {
-            text.right := fold Au(0) .. text$-.endOfLine ? text$i.inlinewidth : text$-.right + text$i.inlinewidth;
-            text.posX := fold Au(0) .. text$i.right - text$i.inlinewidth;
-            text.lineHeight := fold Au(0) .. text$-.endOfLine ? text$i.inlineHeight : max(text$-.lineHeight, text$i.inlineHeight);
-            text.linePosY := fold Au(0) .. text$-.endOfLine ? (text$-.linePosY + text$-.lineHeight) : text$-.linePosY;
-            text.posY := fold Au(0) .. text$i.linePosY + text$i.baselineFinal - text$i.inlineAscent;
+            text.right := fold Au(0) .. text$-.endOfLine ?
+                                          text$i.inlinewidth :
+                                          text$-.right + text$i.inlinewidth;
+
+            text.posX := fold Au(0) .. absX + text$i.right - text$i.inlinewidth;
+
+            text.lineHeight := fold Au(0) .. text$-.endOfLine ?
+                                               text$i.inlineHeight :
+                                               max(text$-.lineHeight, text$i.inlineHeight);
+
+            text.linePosY := fold Au(0) .. text$-.endOfLine ?
+                                             (text$-.linePosY + text$-.lineHeight) :
+                                             text$-.linePosY;
+
+            text.posY := fold Au(0) .. absY + text$i.linePosY + text$i.baselineFinal - text$i.inlineAscent;
+
+            flowHeight := fold Au(0) .. text$i.lineHeight + $-.flowHeight;
+
+            render := fold 0 .. add_text_fragment(display_list,
+                                                  // text$i.specific,
+                                                  // text$i.style,
+                                                  // text$i.node,
+                                                  text$i.posX,
+                                                  text$i.posY,
+                                                  text$i.availableTextWidth,
+                                                  text$i.lineHeight);
         }
     }
 }

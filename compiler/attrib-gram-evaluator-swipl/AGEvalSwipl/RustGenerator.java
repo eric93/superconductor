@@ -22,7 +22,7 @@ import jpl.Variable;
 
 public class RustGenerator extends BackendBase implements Backend {
 
-    private static boolean GENERATE_LOG = true; // Toggle flag to generate log statements
+    private static boolean GENERATE_LOG = false; // Toggle flag to generate log statements
 
     private Hashtable<String, String> nameLookup;
     private HashSet<String> notFtlAttrs;
