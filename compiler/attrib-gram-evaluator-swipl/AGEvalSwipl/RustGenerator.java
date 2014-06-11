@@ -28,6 +28,7 @@ public class RustGenerator extends BackendBase implements Backend {
     private HashSet<String> notFtlAttrs;
     private HashSet<String> borrowMutAttrs;
     private HashSet<String> borrowMutTypes;
+    private HashSet<String> clonableTypes;
 
     public RustGenerator() {
 
@@ -89,8 +90,15 @@ public class RustGenerator extends BackendBase implements Backend {
 
         borrowMutAttrs = new HashSet<String>();
         borrowMutAttrs.add("displayuscorelist");
-        borrowMutAttrs.add("nodeuscorelist");
         borrowMutAttrs.add("fragment");
+
+        // Types that are clonable. If all the types in a FtlAttrs struct are clonable,
+        // we will generate a #[deriving(Clone)] at the top of the struct.
+
+        clonableTypes = new HashSet<String>();
+        clonableTypes.add("Au");
+        clonableTypes.add("int");
+        clonableTypes.add("bool");
     }
 
     private String servoVal(String val) {
@@ -118,7 +126,8 @@ public class RustGenerator extends BackendBase implements Backend {
     }
 
     private String generateFtlStruct(IFace iface, ALEParser ast) throws InvalidGrammarException {
-        Set<String> attrs= iface.getAttrsLowercase();
+        Set<String> attrs = iface.getAttrsLowercase();
+        Set<String> types = new HashSet<String>();
         attrs.removeAll(notFtlAttrs);
         if (attrs.size() == 0) {
             return "";
@@ -141,12 +150,20 @@ public class RustGenerator extends BackendBase implements Backend {
 
         for (String attr : attrs) {
             String type = Generator.extendedGet(ast, iface, attr).strType;
+            types.add(type);
             res += "      " + attr + ": "+ typeConstructor(type) +",\n";
         }
 
         res += "    }\n";
         res += "  }\n";
         res += "}\n\n";
+
+        types.removeAll(clonableTypes);
+        if (types.size() == 0) {
+            // Only add this if every type is clonable
+            res = "#[deriving(Clone)]\n" + res;
+        }
+
         return res;
     }
 
@@ -226,9 +243,12 @@ public class RustGenerator extends BackendBase implements Backend {
         res += " fn with_all_children(&mut self, func: |&mut FtlNode|) {\n";
 
         for (AGEval.IFace child_iface : child_ifaces) {
-            res += "  for child in self." + servoVal(cls.getChildNamesForType(child_iface).get(0)) + ".mut_iter() {\n";
-            res += "    func(as_ftl_node(child));\n";
-            res += "  }\n";
+            if (child_iface.getName().equals("BaseFlow")) {
+                // Only loop through children if they are flows
+                res += "  for child in self." + servoVal(cls.getChildNamesForType(child_iface).get(0)) + ".mut_iter() {\n";
+                res += "    func(as_ftl_node(child));\n";
+                res += "  }\n";
+            }
         }
 
         res += " }\n";
