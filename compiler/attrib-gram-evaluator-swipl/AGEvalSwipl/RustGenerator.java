@@ -65,6 +65,9 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("inlinewidth","border_box.size.width");
         nameLookup.put("inlineascent","get_ascent()");
         nameLookup.put("inlineheight", "get_lineheight()");
+        nameLookup.put("fragspecific","specific.clone()");
+        nameLookup.put("fragstyle","style.clone()");
+        nameLookup.put("fragnode", "node.clone()");
 
         notFtlAttrs = new HashSet<String>();
         notFtlAttrs.add("is_root");
@@ -333,7 +336,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
         String res = "";
         for (int i = 0; i < indentSrc; i++) res += " ";
-        res += "debug!(\"FTL: ";
+        res += "println!(\"FTL: ";
         for (int i = 0; i < indentOut; i++) res += " ";
         res += msg + " {}\", " + rhs + ");\n";
         return res;

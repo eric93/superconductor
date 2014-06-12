@@ -49,6 +49,9 @@ interface InlineBox {
     input inlineHeight : Au;
     input inlineAscent : Au;
     input inlineWidth : Au;
+    input fragSpecific : SpecificFragmentInfo;
+    input fragStyle : Arc<ComputedValues>;
+    input fragNode : OpaqueNode;
 }
 
 trait blockWidth{
@@ -269,24 +272,29 @@ class InlineFlow: BaseFlow {
                                           text$i.inlinewidth :
                                           text$-.right + text$i.inlinewidth;
 
-            text.posX := fold Au(0) .. absX + text$i.right - text$i.inlinewidth;
+            // text.posX := fold Au(0) .. absX + text$i.right - text$i.inlinewidth;
+            text.posX := fold Au(0) .. absX;
 
             text.lineHeight := fold Au(0) .. text$-.endOfLine ?
                                                text$i.inlineHeight :
                                                max(text$-.lineHeight, text$i.inlineHeight);
 
+            // text.linePosY := fold Au(0) .. text$-.endOfLine ?
+            //                                  (text$-.linePosY + text$-.lineHeight) :
+            //                                  text$-.linePosY;
+
             text.linePosY := fold Au(0) .. text$-.endOfLine ?
-                                             (text$-.linePosY + text$-.lineHeight) :
-                                             text$-.linePosY;
+                                             text$-.linePosY :
+                                             (text$-.linePosY + text$-.lineHeight);
 
             text.posY := fold Au(0) .. absY + text$i.linePosY + text$i.baselineFinal - text$i.inlineAscent;
 
             flowHeight := fold Au(0) .. text$i.lineHeight + $-.flowHeight;
 
             render := fold 0 .. add_text_fragment(display_list,
-                                                  // text$i.specific,
-                                                  // text$i.style,
-                                                  // text$i.node,
+                                                  text$i.fragSpecific,
+                                                  text$i.fragStyle,
+                                                  text$i.fragNode,
                                                   text$i.posX,
                                                   text$i.posY,
                                                   text$i.availableTextWidth,
