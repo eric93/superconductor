@@ -26,7 +26,6 @@ interface BaseFlow {
     var totalWidth: Au;
     var totalHeight: Au;
 
-    var render : int;
     //* var render : int;
     var makeList: FTLDisplayList;
 
@@ -292,14 +291,14 @@ class InlineFlow: BaseFlow {
 
             flowHeight := fold Au(0) .. text$i.lineHeight + $-.flowHeight;
 
-            render := fold 0 .. add_text_fragment(display_list,
-                                                  text$i.fragSpecific,
-                                                  text$i.fragStyle,
-                                                  text$i.fragNode,
-                                                  text$i.posX,
-                                                  text$i.posY,
-                                                  text$i.availableTextWidth,
-                                                  text$i.lineHeight);
+            display_list := fold new_display_list() .. add_text_fragment($-.display_list,
+                                                                         text$i.fragSpecific,
+                                                                         text$i.fragStyle,
+                                                                         text$i.fragNode,
+                                                                         text$i.posX,
+                                                                         text$i.posY,
+                                                                         text$i.availableTextWidth,
+                                                                         text$i.lineHeight);
         }
     }
 }
