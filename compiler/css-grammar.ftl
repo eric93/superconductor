@@ -46,6 +46,7 @@ interface InlineBox {
     var right : Au;
     var posY : Au;
 
+    input mustEndLine : bool;
     input inlineHeight : Au;
     input inlineAscent : Au;
     input inlineWidth : Au;
@@ -249,20 +250,20 @@ class InlineFlow: BaseFlow {
         totalWidth := flowWidth;
 
         loop text by split_to_width(text$-.availableTextWidth, text$-.endOfLine) {
-            text.endOfLine := fold false .. (text$i.inlinewidth > text$-.availableTextWidth);
+            text.endOfLine := fold true .. (text$i.inlinewidth > text$-.availableTextWidth) || text$i.mustEndLine;
 
             text.availableTextWidth := fold availableWidth ..
-                                            (text$-.endOfLine) ?
-                                              (text$-.availableTextWidth - text$i.inlinewidth) :
-                                              (availableWidth);
+                                            (text$i.endOfLine) ?
+                                              (availableWidth) :
+                                              (text$-.availableTextWidth - text$i.inlinewidth);
 
             text.baseline := fold Au(0) .. text$-.endOfLine ?
-                                             Au(0) :
+                                             text$i.inlineAscent :
                                              max(text$-.baseline, text$i.inlineAscent);
         }
 
         loop text by next() {
-            text.baselineFinal := fold Au(0) .. text$i.endOfLine ?
+            text.baselineFinal := fold Au(0) .. text$-.endOfLine ?
                                                   text$i.baseline :
                                                   text$-.baselineFinal;
         }
@@ -272,20 +273,15 @@ class InlineFlow: BaseFlow {
                                           text$i.inlinewidth :
                                           text$-.right + text$i.inlinewidth;
 
-            // text.posX := fold Au(0) .. absX + text$i.right - text$i.inlinewidth;
-            text.posX := fold Au(0) .. absX;
+            text.posX := fold Au(0) .. absX + text$i.right - text$i.inlinewidth;
 
             text.lineHeight := fold Au(0) .. text$-.endOfLine ?
                                                text$i.inlineHeight :
                                                max(text$-.lineHeight, text$i.inlineHeight);
 
-            // text.linePosY := fold Au(0) .. text$-.endOfLine ?
-            //                                  (text$-.linePosY + text$-.lineHeight) :
-            //                                  text$-.linePosY;
-
             text.linePosY := fold Au(0) .. text$-.endOfLine ?
-                                             text$-.linePosY :
-                                             (text$-.linePosY + text$-.lineHeight);
+                                             (text$-.linePosY + text$-.lineHeight) :
+                                             text$-.linePosY;
 
             text.posY := fold Au(0) .. absY + text$i.linePosY + text$i.baselineFinal - text$i.inlineAscent;
 

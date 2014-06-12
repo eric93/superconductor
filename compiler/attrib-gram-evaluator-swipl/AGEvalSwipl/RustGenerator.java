@@ -22,7 +22,7 @@ import jpl.Variable;
 
 public class RustGenerator extends BackendBase implements Backend {
 
-    private static boolean GENERATE_LOG = false; // Toggle flag to generate log statements
+    private static boolean GENERATE_LOG = true; // Toggle flag to generate log statements
 
     private Hashtable<String, String> nameLookup;
     private Hashtable<String, String> rhsLookup;
@@ -344,7 +344,7 @@ public class RustGenerator extends BackendBase implements Backend {
 
         String res = "";
         for (int i = 0; i < indentSrc; i++) res += " ";
-        res += "println!(\"FTL: ";
+        res += "debug!(\"FTL: ";
         for (int i = 0; i < indentOut; i++) res += " ";
         res += msg + " {}\", " + rhs + ");\n";
         return res;
