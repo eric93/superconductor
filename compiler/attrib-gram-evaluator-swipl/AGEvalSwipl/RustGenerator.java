@@ -25,6 +25,7 @@ public class RustGenerator extends BackendBase implements Backend {
     private static boolean GENERATE_LOG = true; // Toggle flag to generate log statements
 
     private Hashtable<String, String> nameLookup;
+    private Hashtable<String, String> rhsLookup;
     private HashSet<String> notFtlAttrs;
     private HashSet<String> borrowMutAttrs;
     private HashSet<String> borrowMutTypes;
@@ -66,11 +67,15 @@ public class RustGenerator extends BackendBase implements Backend {
         nameLookup.put("inlineascent","get_ascent()");
         nameLookup.put("inlineheight", "get_lineheight()");
 
+        rhsLookup = new Hashtable<String,String>();
+        rhsLookup.put("display_list", "ftl_attrs.display_list.take_unwrap().to_option()");
+        rhsLookup.put("makelist", "ftl_attrs.makelist.take_unwrap().to_option()");
+
         notFtlAttrs = new HashSet<String>();
         notFtlAttrs.add("is_root");
         notFtlAttrs.add("screenwidth");
         notFtlAttrs.add("position");
-        notFtlAttrs.add("display_list");
+        //notFtlAttrs.add("display_list");
         notFtlAttrs.add("fragment");
 
         // Types that are always mutably borrowed in function headers
@@ -80,7 +85,6 @@ public class RustGenerator extends BackendBase implements Backend {
         //     _ale_arg0: Type
 
         borrowMutTypes = new HashSet<String>();
-        borrowMutTypes.add("DisplayList");
 
         // Attributes that are always mutably borrowed in function calls
         // If attr is in this set,
@@ -89,7 +93,6 @@ public class RustGenerator extends BackendBase implements Backend {
         //     function(attr)
 
         borrowMutAttrs = new HashSet<String>();
-        borrowMutAttrs.add("displayuscorelist");
         borrowMutAttrs.add("fragment");
 
         // Types that are clonable. If all the types in a FtlAttrs struct are clonable,
@@ -101,12 +104,14 @@ public class RustGenerator extends BackendBase implements Backend {
         clonableTypes.add("bool");
     }
 
-    private String servoVal(String val) {
+    private String servoVal(String val, boolean rhs) {
         // Weird escaping...
         val = val.toLowerCase().replace("uscore", "_");
 
         if (nameLookup.containsKey(val)) {
             val =  nameLookup.get(val);
+        } else if (rhs && rhsLookup.containsKey(val)) {
+            val = rhsLookup.get(val);
         } else if (! notFtlAttrs.contains(val)) {
             val =  "ftl_attrs." + val;
         }
@@ -120,6 +125,8 @@ public class RustGenerator extends BackendBase implements Backend {
             return "false";
         if (type.equals("int"))
             return "0";
+        if (type.equals("FTLDisplayList"))
+            return "None";
 
 
         return type + "::new()";
@@ -245,7 +252,7 @@ public class RustGenerator extends BackendBase implements Backend {
         for (AGEval.IFace child_iface : child_ifaces) {
             if (child_iface.getName().equals("BaseFlow")) {
                 // Only loop through children if they are flows
-                res += "  for child in self." + servoVal(cls.getChildNamesForType(child_iface).get(0)) + ".mut_iter() {\n";
+                res += "  for child in self." + servoVal(cls.getChildNamesForType(child_iface).get(0), false) + ".mut_iter() {\n";
                 res += "    func(as_ftl_node(child));\n";
                 res += "  }\n";
             }
@@ -279,7 +286,7 @@ public class RustGenerator extends BackendBase implements Backend {
         //System.err.println("loopExpr: " + loopExpr);
         String ret = "  { // Appease the borrow checker\n";
         ret += "  let mut old_child: Option<&mut " + childType(loopVar.childName) + "> = None;\n";
-        ret += "  let mut children = self." + servoVal(loopVar.childName) + loopIterator(loopExpr,loopVar.childName) + ";\n";
+        ret += "  let mut children = self." + servoVal(loopVar.childName,false) + loopIterator(loopExpr,loopVar.childName) + ";\n";
 
         //AGEval.IFace iface = parent_class.getChildMappings().get(loopVar);
         //System.out.println("Loopvar: " + loopVar);
@@ -325,9 +332,10 @@ public class RustGenerator extends BackendBase implements Backend {
 
         // Hack to get rid of rust compiler errors, this cannot be borrowed again
         if (rhs.contains("borrowuscoremut()") ||
-            rhs.contains("self.base.displayuscorelist") ||
             rhs.contains("self.base.ftluscoreattrs.nodeuscorelist") ||
-            rhs.contains("self.fragment")) {
+            rhs.contains("self.fragment") ||
+            rhs.contains("displayuscorelist") ||
+            rhs.contains("makelist")) {
             return "";
         }
 
@@ -370,14 +378,14 @@ public class RustGenerator extends BackendBase implements Backend {
     }
 
 
-    private String toBaseVal(Class cls, String prop, String propClean) {
+    private String toBaseVal(Class cls, String prop, String propClean, boolean rhs) {
         if (!(cls.getAttrsLowercase().contains(prop.toLowerCase())
               || cls.hasField(prop)))
             // If the attribute is in the interface, it is not in the node struct
             // but the base field.
-            return "base." + servoVal(propClean);
+            return "base." + servoVal(propClean, rhs);
         else
-            return servoVal(propClean);
+            return servoVal(propClean, rhs);
     }
 
 
@@ -411,15 +419,15 @@ public class RustGenerator extends BackendBase implements Backend {
         if (isParent) {
             // Parent attributes are all set in the top-level block of the visitor, so node is in
             // scope.
-            return "self." + toBaseVal(cls, prop, propClean) + " = (";
+            return "self." + toBaseVal(cls, prop, propClean, false) + " = (";
         } else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child)) {
             // Children arrays are all assigned to inside loops, so child will be in scope.
             // We need to assign to child_prop_last as well, becuase thats where $- is expected next time.
             // Signal this by prepending "\n\nloop_var$\n"
-            return "\n\n" + child + "_" + propClean + "_last = " + "child." + servoVal(propClean) + "$\n" +
-                "child." + servoVal(propClean) + " = (";
+            return "\n\n" + child + "_" + propClean + "_last = " + "child." + servoVal(propClean,false) + "$\n" +
+                "child." + servoVal(propClean,false) + " = (";
         } else {
-            return "self." + childClean + "." + servoVal(propClean) + " = (";
+            return "self." + childClean + "." + servoVal(propClean,false) + " = (";
         }
     }
 
@@ -487,7 +495,7 @@ public class RustGenerator extends BackendBase implements Backend {
         child = child.toLowerCase();
         String ret;
 
-        String baseval = toBaseVal(cls, originalProp, cleanProp);
+        String baseval = toBaseVal(cls, originalProp, cleanProp, true);
 
         String borrowMut = "";
 
@@ -508,14 +516,14 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 throw new InvalidGrammarException("Cannot access $i of self in class: " + cls.getName());
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return borrowMut + "child." + servoVal(cleanProp);
+                return borrowMut + "child." + servoVal(cleanProp,true);
             else
                 throw new InvalidGrammarException("Cannot access $i attrib of a non-multi child: " + cls.getName());
         } else if (prop.contains("$-")) {
             if (isParent)
                 return borrowMut + "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return borrowMut +  "(if first { " + child + "_" + cleanProp + "_init } else { old_child.get_ref()." + servoVal(cleanProp) + " })";
+                return borrowMut +  "(if first { " + child + "_" + cleanProp + "_init } else { old_child.get_ref()." + servoVal(cleanProp,true) + " })";
             else
                 throw new InvalidGrammarException("Cannot access $- attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -531,9 +539,9 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return borrowMut + "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return borrowMut + "child." + servoVal(cleanProp);
+                return borrowMut + "child." + servoVal(cleanProp,true);
             else
-                return borrowMut + "self." + child + "." + servoVal(cleanProp);
+                return borrowMut + "self." + child + "." + servoVal(cleanProp,true);
         }
     }
 
@@ -664,8 +672,7 @@ public class RustGenerator extends BackendBase implements Backend {
             "use layout::fragment::Fragment;\n" +
             "use layout::model::{specified};\n" +
             "use style::computed_values::{LengthOrPercentageOrAuto,LengthOrPercentage};\n" +
-            "use servo_util::geometry::Au;\n" +
-            "use gfx::display_list::{DisplayList};\n\n";
+            "use servo_util::geometry::Au;\n\n";
 
         res += "pub trait FtlNode {\n";
         res += "  fn with_all_children(&mut self, func: |&mut FtlNode|);\n";

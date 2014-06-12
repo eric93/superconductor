@@ -25,10 +25,10 @@ interface BaseFlow {
     var totalHeight: Au;
 
     //* var render : int;
-    var makeLists: int;
+    var makeList: FTLDisplayList;
 
-    var display_list: DisplayList;
-    //var node_list: DisplayList;
+    var display_list: FTLDisplayList;
+    //var node_list: FTLDisplayList;
 
     input screenwidth: Au;
 }
@@ -196,7 +196,7 @@ class BlockFlow (blockWidth) : BaseFlow {
 
             flowChildren.availableWidth := fold Au(0) .. computedWidth;
 
-            makeLists := fold 0 .. merge_lists(display_list, flowChildren$i.display_list);
+            display_list := fold makeList .. merge_lists($-display_list, flowChildren$i.display_list);
 
             //* makeLists := fold 0 .. merge_lists(display_list, flowChildren$i.display_list)
             //                      + flowChildren$i.render;
@@ -219,7 +219,7 @@ class BlockFlow (blockWidth) : BaseFlow {
         // Adds items to display list layering from bottom up. In this case background
         // comes before border.
 
-        display_list := add_border(add_background(new_display_list(), fragment, absX + ml,
+        makeList := add_border(add_background(new_display_list(), fragment, absX + ml,
                                                absY + mt, flowWidth, flowHeight),
                                 fragment, absX + ml, absY + mt, flowWidth, flowHeight, bt, br, bb, bl);
 
