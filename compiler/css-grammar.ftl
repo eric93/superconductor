@@ -38,8 +38,8 @@ interface BaseFlow {
 interface InlineBox {
     var endOfLine : bool;
     var availableTextWidth : Au;
-    var baseline : Au;
-    var baselineFinal : Au;
+    var baseline : AuList;
+    var baselineFinal : AuList;
     var lineHeight : Au;
     var linePosY : Au;
     var posX : Au;
@@ -202,7 +202,7 @@ class BlockFlow (blockWidth) : BaseFlow {
 
             flowChildren.availableWidth := fold Au(0) .. computedWidth;
 
-            display_list := fold makeList .. merge_lists($-display_list, flowChildren$i.display_list);
+            display_list := fold makeList .. merge_lists($-.display_list, flowChildren$i.display_list);
 
             //* makeLists := fold 0 .. merge_lists(display_list, flowChildren$i.display_list)
             //                      + flowChildren$i.render;
@@ -240,6 +240,10 @@ class InlineFlow: BaseFlow {
         text : [InlineBox];
     }
 
+    attributes {
+        var baselineLast: AuList;
+    }
+
     actions {
         flowWidth := availableWidth;
         flowX := containingX;
@@ -257,15 +261,15 @@ class InlineFlow: BaseFlow {
                                               (availableWidth) :
                                               (text$-.availableTextWidth - text$i.inlinewidth);
 
-            text.baseline := fold Au(0) .. text$-.endOfLine ?
-                                             text$i.inlineAscent :
-                                             max(text$-.baseline, text$i.inlineAscent);
+            text.baseline := fold EmptyList() .. text$-.endOfLine ? 
+                                                append(text$-.baseline,text$i.inlineAscent) : 
+                                                modifyLast(text$-.baseline, max(getLast(text$-.baseline), text$i.inlineAscent)); 
         }
 
-        loop text by next() {
-            text.baselineFinal := fold Au(0) .. text$-.endOfLine ?
-                                                  text$i.baseline :
-                                                  text$-.baselineFinal;
+        baselineLast := text$$.baseline;
+
+        loop text {
+            text.baselineFinal := fold baselineLast .. text$-.endOfLine ? text$-.baselineFinal : butFirst(text$-.baselineFinal);
         }
 
         loop text {
@@ -283,7 +287,7 @@ class InlineFlow: BaseFlow {
                                              (text$-.linePosY + text$-.lineHeight) :
                                              text$-.linePosY;
 
-            text.posY := fold Au(0) .. absY + text$i.linePosY + text$i.baselineFinal - text$i.inlineAscent;
+            text.posY := fold Au(0) .. absY + text$i.linePosY + getFirst(text$i.baselineFinal) - text$i.inlineAscent;
 
             flowHeight := fold Au(0) .. text$i.lineHeight + $-.flowHeight;
 

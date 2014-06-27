@@ -73,6 +73,10 @@ public class RustGenerator extends BackendBase implements Backend {
         rhsLookup = new Hashtable<String,String>();
         rhsLookup.put("display_list", "ftl_attrs.display_list.take_unwrap().to_option()");
         rhsLookup.put("makelist", "ftl_attrs.makelist.take_unwrap().to_option()");
+        rhsLookup.put("baseline", "ftl_attrs.baseline.clone()");
+        rhsLookup.put("baselineFinal", "ftl_attrs.baselinefinal.clone()");
+        rhsLookup.put("baselineLast", "ftl_attrs.baselinelast.clone()");
+
 
         notFtlAttrs = new HashSet<String>();
         notFtlAttrs.add("is_root");
@@ -105,6 +109,7 @@ public class RustGenerator extends BackendBase implements Backend {
         clonableTypes.add("Au");
         clonableTypes.add("int");
         clonableTypes.add("bool");
+        clonableTypes.add("AuList");
     }
 
     private String servoVal(String val, boolean rhs) {
@@ -130,6 +135,8 @@ public class RustGenerator extends BackendBase implements Backend {
             return "0";
         if (type.equals("FTLDisplayList"))
             return "None";
+        if (type.equals("AuList"))
+            return "EmptyList()";
 
 
         return type + "::new()";
@@ -338,7 +345,8 @@ public class RustGenerator extends BackendBase implements Backend {
             rhs.contains("self.base.ftluscoreattrs.nodeuscorelist") ||
             rhs.contains("self.fragment") ||
             rhs.contains("displayuscorelist") ||
-            rhs.contains("makelist")) {
+            rhs.contains("makelist") ||
+            rhs.contains("baseline")) {
             return "";
         }
 
@@ -526,7 +534,7 @@ public class RustGenerator extends BackendBase implements Backend {
             if (isParent)
                 return borrowMut + "self." + baseval;
             else if (Generator.childrenContains(ast.extendedClasses.get(cls).multiChildren.keySet(), child))
-                return borrowMut +  "(if first { " + child + "_" + cleanProp + "_init } else { old_child.get_ref()." + servoVal(cleanProp,true) + " })";
+                return "(if first { " + borrowMut + child + "_" + cleanProp + "_init } else {" + borrowMut +" old_child.get_ref()." + servoVal(cleanProp,true) + " })";
             else
                 throw new InvalidGrammarException("Cannot access $- attrib of " +
                                                   "a non-multi child / self reduction: " + lhs);
@@ -595,11 +603,11 @@ public class RustGenerator extends BackendBase implements Backend {
     }
 
     public String openLastChild(AGEval.Class cls, ALEParser.LoopOrdering loopVar) {
-        return "      if (i + 1 == children.length) {\n";
+        return "//Unsupported: ";
     }
 
     public String closeLastChild() {
-        return "      }\n";
+        return "\n";
     }
 
     public boolean anyVisitAllowsText (ALEParser ast) {
