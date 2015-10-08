@@ -5,20 +5,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Vector;
 
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Term;
 
 import AGEvalSwipl.AGEvaluatorSwipl.Schedule;
 import aleGrammar.ALEParser;
 
 public class LoopRecoverer {
 	public final ALEParser ast;	
-	public final Hashtable<Variable, Term> binding;
+	public final Map<String, Term> binding;
 	public final HashMap<AGEval.Class, ArrayList<String>> childOrders;	
 	private final HashMap<AGEval.Class, Vector<SingleVisitRaw> > visitsRaw;
 	public final HashMap<AGEval.Class, Vector<SingleVisitClean> > visitsClean;

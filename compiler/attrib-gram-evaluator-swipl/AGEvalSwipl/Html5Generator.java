@@ -3,7 +3,7 @@ package AGEvalSwipl;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.Map.Entry;
 
 //import org.antlr.runtime.RecognitionException;
@@ -14,8 +14,7 @@ import AGEval.Class;
 import AGEval.InvalidGrammarException;
 import AGEvalSwipl.AGEvaluatorSwipl.Schedule;
 
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Term;
 
 public class Html5Generator extends BackendBase implements Backend {	
 
@@ -84,7 +83,7 @@ public class Html5Generator extends BackendBase implements Backend {
 	}
 
 	
-	public String printCurrentPipelineBuild (Hashtable<Variable, Term> binding) throws InvalidGrammarException {
+	public String printCurrentPipelineBuild (Map<String, Term> binding) throws InvalidGrammarException {
 		String res = "function layout (root) {\n";
 		int pass = 0;
 		for (Term visit : binding.get("P").toTermArray()) {
@@ -441,7 +440,7 @@ public class Html5Generator extends BackendBase implements Backend {
 	}
 
 	public String output(String baseName, String visitOut, String visitDispatches, String outputDir, boolean write,
-			boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Hashtable<Variable, Term> binding, AGEvaluator aleg) throws IOException,
+			boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Map<String, Term> binding, AGEvaluator aleg) throws IOException,
 			InvalidGrammarException {
 		String res = "";
 		res += fHeaders;		

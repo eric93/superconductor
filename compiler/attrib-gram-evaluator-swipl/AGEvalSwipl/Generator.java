@@ -5,12 +5,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
 
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Term;
 import AGEval.AGEvaluator;
 import AGEval.Function;
 import AGEval.InvalidGrammarException;
@@ -511,7 +510,8 @@ public class Generator implements GeneratorI {
 	
 	public String visits(
 			AGEvaluator aleg,
-			Hashtable<Variable, Term> binding, HashMap<AGEval.Class, ArrayList<String>> childOrder,
+			Map<String, Term> binding,
+			HashMap<AGEval.Class, ArrayList<String>> childOrder,
 			HashMap<String, AGEval.Class> classMap,
 			HashMap<String, String> exprToCall,
 			HashMap<String, String> exprPrinter,
@@ -905,7 +905,7 @@ public class Generator implements GeneratorI {
 
 		////////////////////////////////////////////////////////////////
 				
-		Hashtable<Variable, Term> binding = null;
+		Map<String, Term> binding = null;
 		int round = 0;		
 		(new File(outputDir + File.separator + "variants")).mkdir();
 		
@@ -1002,7 +1002,7 @@ public class Generator implements GeneratorI {
 		
 		////////////////////////////////////////////////////////////////
 			
-		Hashtable<Variable, Term> binding = null;
+		Map<String, Term> binding = null;
 		//int vlen =  0;
 		
 		if (true) {
@@ -1024,7 +1024,7 @@ public class Generator implements GeneratorI {
 		} //else {
 //
 //			while (sched.hasNext()) {
-//				Hashtable<Variable, Term> nextBinding = sched.moveNext(); 
+//				Map<String, Term> nextBinding = sched.moveNext(); 
 //				int nextLen = sched.binding.get("P").toTermArray().length;
 //				if (binding == null || nextLen < vlen) {
 //					binding = nextBinding;

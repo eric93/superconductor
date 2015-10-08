@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Map.Entry;
 
 //import org.antlr.runtime.RecognitionException;
@@ -17,8 +18,7 @@ import AGEval.IFace;
 import AGEval.InvalidGrammarException;
 import AGEvalSwipl.AGEvaluatorSwipl.Schedule;
 
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Term;
 
 public class RustGenerator extends BackendBase implements Backend {
 
@@ -313,7 +313,7 @@ public class RustGenerator extends BackendBase implements Backend {
     }
 
 
-    public String printCurrentPipelineBuild (Hashtable<Variable, Term> binding) throws InvalidGrammarException {
+    public String printCurrentPipelineBuild (Map<String, Term> binding) throws InvalidGrammarException {
         String res = "pub fn layout (root: &mut FtlNode) {\n";
         int pass = 0;
         for (Term visit : binding.get("P").toTermArray()) {
@@ -658,7 +658,7 @@ public class RustGenerator extends BackendBase implements Backend {
     }
 
     public String output(String baseName, String visitOut, String visitDispatches, String outputDir, boolean write,
-                         boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Hashtable<Variable, Term> binding, AGEvaluator aleg) throws IOException,
+                         boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Map<String, Term> binding, AGEvaluator aleg) throws IOException,
                                                                                                                                                       InvalidGrammarException {
         String res = "#[feature(globs)]\n" +
             "use layout::ftl_lib::*;\n" +
