@@ -1,0 +1,46 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+	
+		<title>html5 backend</title>
+                <script>
+                state = undefined;
+								attrMap = {};
+								otherAttrs = [];
+								</script>
+
+		<script src="mywidget.js"></script>
+		<script src="sizzle.js"></script>
+		<script src="runSelectors.js"></script>
+		<script src="DOMToRender.js"></script>
+		<script src="render.js"></script>
+		<style>
+				box, leafbox  {w : 10; h: 10; parent_len:40}
+				box box {w: 20; h: 20}
+				box leafbox {parent_len: 15}
+		</style>
+</head><body>
+	<br/>
+	
+		<canvas id="canvas">
+		<contents id="contents">
+		    <root>
+                    <box refname="child" id="topBox" style = "w: 40; h: 20; asdf : jkl">
+                        <box style = "refName:l_child" id="somebox">
+                            <leafbox style = "refName:l_child"> </leafbox>
+                            <leafbox style = "refName:d_child"> </leafbox>
+                            <baseedge style = "refName:l_edge"> </baseedge>
+                            <baseedge style = "refName:d_edge"> </baseedge>
+                        </box>
+                        <box style = "refName:d_child">
+                            <leafbox style = "refName:l_child"> </leafbox>
+                            <leafbox style = "refName:d_child"> </leafbox>
+                            <baseedge style = "refName:l_edge"></baseedge>
+                            <baseedge style = "refName:d_edge"></baseedge>
+                        </box>
+                        <baseedge style = "refName:l_edge"> </baseedge>
+                        <baseedge style = "refName:d_edge"> </baseedge>
+                    </box>
+                    </root>
+                </contents>
+	<!-- vim: set noet ff=unix ts=2 sw=2 fdm=manual: -->
+</canvas></body></html>

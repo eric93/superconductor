@@ -1,0 +1,116 @@
+<html>
+    <head>
+        <script type = "text/javascript" src = "rendering/render.js"></script>
+        <script type = "text/javascript" src = "rendering/DOMToRender.js"></script>
+        <script type = "text/javascript" src = "rendering/float.helper.js"></script>
+        <script type = "text/javascript" src = "rendering/runSelectors.js"></script>
+        <script type = "text/javascript" src = "rendering/tablesideal.helper.js"></script>
+        <script type = "text/javascript" src = "rendering/cssvalues.js"></script>
+        <script type = "text/javascript" src = "rendering/css.js"></script>
+        <script type = "text/javascript" src = "rendering/sizzle.js"></script>
+
+
+        <script type = "text/javascript">
+            state = undefined;
+            images = [];
+            otherAttrs = [];
+            attribMap = {borders: "border-style", borderw: "border-width", borderc: "border-color", bgc: "background-color", intrinsfontsize : "font-size",  verticalalign : "vertical-align",
+                        margintop: "margin-top", marginbottom: "margin-bottom", marginleft: "margin-left", marginright: "margin-right", paddingtop: "padding-top", paddingbottom: "padding-bottom", paddingleft: "padding-left",
+                        paddingright: "padding-right"};
+        </script>
+
+    <style>
+        inlineleaf {border: 1px solid black; background: white;}
+    </style>
+    </head>
+    <body>
+        <canvas id = "canvas">
+            <contents id = "contents">
+                <root style = "display: block; width: 300px">
+                    <div style = "background: red; padding: 10px">
+                        <div>
+
+                        </div>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 63px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 64px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 20px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 44px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 34px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 70px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 21px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 98px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 4px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 86px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 82px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 16px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 68px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 22px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 3px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 6px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 34px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 62px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 15px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 91px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 74px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 66px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 59px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 54px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 51px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 69px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 47px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 59px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 99px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 38px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 93px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 90px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 48px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 53px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 56px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 54px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 72px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 71px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 16px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 79px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 94px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 21px"></inlineleaf>
+
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 58px; background: blue"></inlineleaf>
+                        <div style = "float: left; clear: none">
+                            <blockleaf style = "display: block; width: 100px; height: 100px; background: blue; margin: 5px;" ></blockleaf>
+                        </div>
+
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 95px; background: yellow"></inlineleaf>
+                            <div style = "float: right;  clear:left">
+                                <blockleaf style = "background: yellow; display: block; width: 100px; height: 100px"></blockleaf>
+                            </div>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 35px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 91px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 26px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 17px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 60px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 4px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 50px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 50px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 83px"></inlineleaf>
+
+                    </div>
+
+                    <div style = "width : 300px; background: green; clear:none">
+                        <div>
+                        </div>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 34px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 23px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 95px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 69px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 69px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 88px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 40px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 18px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 90px"></inlineleaf>
+                        <inlineleaf style = "display: inline-block; height: 20px; width: 56px"></inlineleaf>
+                    </div>
+                </root>
+            </contents>
+        </canvas>
+    </body>
+</html>

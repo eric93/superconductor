@@ -1,0 +1,149 @@
+//for parsing
+
+interface Node { 
+  input position : string = "static";
+  input left : string = "auto";
+  input right : string = "auto";
+  input top : string = "auto";
+  input color : ? color;
+  input bgc : ? color;
+  input borderw : int = 0;
+  input borders : string = "none";
+  input borderc : ? color;
+  input intrinsFontSize : ? string;
+  input width : string = "auto";
+  input marginTop : taggedInt = {3, 4};
+  input marginBottom : taggedFloat = {5, 6};
+  input marginLeft : ? int;
+  input marginRight : ? int;
+  input paddingTop : ? int;
+  input paddingBottom : ? int;
+  input paddingLeft : ? int;
+  input paddingRight : ? int;
+}
+
+class None : Node { }
+class Block : Node { }
+class Inline : Node { }
+
+trait intrinsicWidths { actions { } }
+trait positioned { actions { } }
+trait posParent { actions { } }
+trait fontStyle { actions { } }
+trait shrinkToFitChilds { actions { } }
+trait blockWidthChilds { actions { } }
+trait useInhWidth { actions { } }
+trait computeSelfHeight { actions { } }
+trait relToMin { actions { } }
+trait posStrokeBox { actions { } }
+trait strokeBox { actions { } }
+trait countChilds { actions { } }
+
+interface Root { 
+  input w : int = 1500;
+  input h : int = 60000;
+}
+
+class Top : Root {
+  children { child : Node }
+}
+
+trait WrappingLeaf { actions { } }
+
+trait WrappingRoot { actions { } }
+trait Wrapping {
+  children { childs : [ Node ]; }
+}
+
+class WrapBox(Wrapping,fontStyle,strokeBox,computeSelfHeight, relToMin, useInhWidth, shrinkToFitChilds, countChilds, posParent, intrinsicWidths) : Node { actions { } }
+
+class ListItem(fontStyle, relToMin, useInhWidth, computeSelfHeight, shrinkToFitChilds, countChilds, posParent, intrinsicWidths) : Node{
+  children { childs : [ Node ]; }
+}
+
+class Img(relToMin, WrappingLeaf) : Node{
+  attributes {
+    input imagehandle : int;
+  }
+}
+
+//table stuff
+
+interface ColsI { }
+
+interface RowI { 
+  input intrinsFontSize : ? string;
+  input color : ? color;
+  input bgc : ? color;
+  input borderc : ? color;
+  input borders : string = "none";
+  input borderw : int = 0;
+}
+
+class TableBox(computeSelfHeight, WrappingLeaf, relToMin, strokeBox, intrinsicWidths) : Node {
+  children {
+    rows : [ RowI ];
+    columns : ColsI;
+  }
+}
+
+interface CellI {
+  input colSpan : ?int;
+  input rowSpan : ?int;  
+  input left : string = "auto";
+  input right : string = "auto";
+  input top : string = "auto";
+  input position : string = "static";
+  input intrinsFontSize : ? string;
+  input color : ? color;
+  input bgc : ? color;
+  input borderc : ? color;
+  input borders : string = "none";
+  input borderw : int = 0;
+  input width : string = "auto";
+  input marginTop : string = "";
+  input marginBottom : string = "";
+  input marginLeft : string = "";
+  input marginRight : string = "";
+  input paddingTop : string = "";
+  input paddingBottom : string = "";
+  input paddingLeft : string = "";
+  input paddingRight : string = "";
+}
+
+class WrappingCell(Wrapping, relToMin,fontStyle, shrinkToFitChilds, countChilds, posParent, intrinsicWidths) : CellI { actions { } }
+
+class Row(computeSelfHeight, fontStyle) : RowI {
+  children {
+    childs : [ CellI ];
+  }
+}
+
+interface ColI { }
+
+class Col : ColI {
+  children {
+    childs : [ CellI ]; // ../rows/childs[.column == self.colNum]
+  }
+}
+
+class Cols : ColsI {
+  children {
+  cols : [ ColI ];
+  }
+}
+
+class PositionedVBox(WrappingRoot, fontStyle, blockWidthChilds, posStrokeBox, countChilds, positioned) : Node{
+  children { childs : [ Node ]; } 
+}
+
+class VBox(WrappingLeaf, WrappingRoot, fontStyle, computeSelfHeight, useInhWidth, blockWidthChilds, relToMin, strokeBox, countChilds, posParent, intrinsicWidths) : Node {
+  children { childs : [ Node ]; } 
+}
+
+class TextBox(useInhWidth, relToMin, computeSelfHeight) : Node { 
+  attributes { 
+    input text : string;
+    input fontFamily : string = "Arial";
+  }
+}

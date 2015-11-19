@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <title>rel width</title>
+        <style type="text/css">
+            .next { background-color: yellow; }
+        </style>    
+    </head>
+    <body style="background-color:#fdd">
+
+<div style="border: 1px solid black; width: 700px">
+      <div style="width: 150px; background-color: green; border: 1px solid red">      
+            a lot of text in a block 
+      </div>
+      <div style="width: 150px; background-color: blue; float: left">      
+        a left float  
+      </div>
+      <div style="width: 150px; background-color: blue; float: left">
+        a left float
+      </div>
+</div>
+<div style="clear: both">(clear)</div>
+
+<div style="border: 1px solid black">
+      <div style="width: 150px; background-color: blue; float: left; height: 50px;">      
+        1) a left float  
+      </div>
+      <div style="width: 150px; background-color: blue; float: left">      
+        2) a left float  
+      </div>
+      <div style="width: 150px; background-color: green; border: 1px solid red">      
+        3) a lot of text in a block
+      </div>
+</div>
+
+
+<div style="clear: both">(clear)</div>
+
+<div style="border: 1px solid black; width: 500px">
+      <div style="width: 150px; background-color: blue; height: 100px; float: left">      
+        1) a left float  
+      </div>
+      <div style="width: 150px; background-color: white; float: left">      
+        2) a left float  
+      </div>
+      <div style="width: 150px; background-color: gray; float: left">      
+        3) a left float  
+      </div>
+      <div style="width: 150px; background-color: white; float: left">      
+        4) a left float  
+      </div>
+      <div style="width: 150px; background-color: green">      
+        a lot of text in a block
+      </div>
+      <div style="width: 150px; background-color: blue; height: 100px; float: left">      
+        1) a left float  
+      </div>
+      <div style="width: 150px; background-color: silver; float: left; height: 100px">      
+        2) a left float that is rather higher than usual
+      </div>
+      <div style="width: 150px; background-color: gray; float: left">      
+        3) a left float  
+      </div>
+      <div style="width: 100px; background-color: white; float: left">      
+        4) a left float  
+      </div>
+      <div style="width: 100px; background-color: white; float: left; height: 30px">      
+        5) a left float  
+      </div>
+      <div style="width: 150px; background-color: orange; float: left">      
+        6) a left float that is again heigher than usual 
+      </div>      
+</div>
+<div style="clear: both">(clear)</div>
+
+<h1>Demonstration</h1>
+<p>The first two blocks show that, in a block flow, floats get put on a different line than a block sibling. However, floats are not considered when computing box boundaries: if a float is before a block (see the middle set of boxes), it pushes the contents of the block down and the block is considered to start at the end of the previous block (not float).
+
+<p>The last, third block shows that, while normal boxes in a block flow are stacked vertically, a word wrapping scheme is used for the floats.
+
+<p>The middle example highlights different bugs in both Mozilla/WebKit and Opera. When a float overflows into a following block, the block should try to float its contents to the right of the float. Mozilla/WebKit fail here. Opera succeeds, but considers the block to start to the right of the float, introducing a different bug.
+    </body>
+</html>    
+       

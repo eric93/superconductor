@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <title>rowspan error</title>
+    <style>
+    td { width: 200px; }
+    col { background-color: #777; }
+    </style>
+  </head>
+  <body>
+    <table border="2">
+      <tr><td>r1c1</td><td rowspan="2">r1c2 (rowspan = 2)</td></tr>
+      <tr><td>r2c1</td><td>r2c2</td></tr>      
+    </table>
+    <p>Input: 2x2 table except one cell specifies an extra (overlapping) row. </p>
+    
+    <p>Expectation: undefined, so either 2x2 table with overlap (precompute cols), 2x2 table with dangling cell (precompute cols and greedily add a col), 3x2 table with no overlap (greedily compute cols). </p>
+    <p>Spec: not in CSS 2.1 (?) but in HTML4 tables. Calculate # cols based on biggest row (in isolation, looking at colspans in that row)</p>
+    
+    <ul>
+      <li>Chrome: 2 columns + dangler</li>
+      <li>Firefox: 2 columns + dangler</li>
+      <li>Opera: 2 columns + dangler</li>
+    </ul>
+    
+    
+  </body>
+</html>  

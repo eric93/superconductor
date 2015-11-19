@@ -1,0 +1,56 @@
+<html>
+    <head>
+        <script type = "text/javascript" src = "css.js"></script>
+        <script type = "text/javascript" src = "runSelectors.js"></script>
+        <script type = "text/javascript" src = "cssvalues.js"></script>
+        <script type = "text/javascript" src = "render.js"></script>
+        <script type = "text/javascript" src = "DOMToRender.js"></script>
+        <script type = "text/javascript" src = "sizzle.js"></script>
+        <script type = "text/javascript">
+            state = undefined;
+            images = [];
+            otherAttrs = [];
+            attribMap = {borders: "border-style", borderw: "border-width", borderc: "border-color", bgc: "background-color", intrinsfontsize : "font-size",  verticalalign : "vertical-align"};
+            window.removeEventListener("load",init,false);
+            origInit = init;
+            init = function(){
+                var docImages = Sizzle("img");
+                if(docImages.length == 0)
+                    return origInit();
+                var numloaded = 1;
+                for(var k = 0; k < docImages.length; k++){
+                    var i = new Image();
+                    i.onload = function(){
+                        if(numloaded >= docImages.length)
+                            origInit();
+                        else
+                            numloaded ++;
+                    };
+                    docImages[k].setAttribute("style", (docImages[k].getAttribute("style") == null ? "" : docImages[k].getAttribute("style")) + "; imagehandle : "+ k + ";" );
+                    images.push(i);
+                    i.src = docImages[k].src;
+                }
+            }           
+            window.addEventListener("load", init, false); 
+        </script>
+        <style>root, contents {display: block}</style>
+
+
+    </head>
+    <body>
+        <canvas id = "canvas">
+        <contents id = "contents">
+            <root>
+                <div>
+                    <span>Hello World</span>
+                    <div style = "display: inline-block"> rawr </div>
+                    <span>How are you?</span>
+                    <table>
+                        <td> Hello World</td>
+                    </table>
+                </div>
+            </root>
+        </contents>
+        </canvas>
+    </body>
+</html>

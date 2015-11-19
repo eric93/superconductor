@@ -1,0 +1,612 @@
+<html><head><title>html5 backend: everything</title>
+<style>
+ body { 
+   max-width: 40em;
+   margin: 1em;
+   padding-left: 2em;
+   border-left: 1px solid gray;
+ }
+ iframe, .code { 
+   margin-top: 1em;
+   margin-bottom: 1em;
+   display: block;
+   width: 45em;  
+   height: 40em; 
+   scroll: overflow;
+   overflow: auto;
+   border: 1px black solid;
+  
+   }
+   td ul {
+     padding-left: 1.5em;
+   }
+   .snippet, pre {
+     font-family: Courier;
+     generic-family: Monospace;
+     font-size: .8em;
+   }
+</style>
+<script>
+state = undefined;
+</script>
+<script src="tablesideal.helper.js"></script><!-- table ADT -->
+<script src="../../tmp/tablesideal.js"></script><!-- visitors -->
+<!--<script src="tablesideal.js"></script>--><!-- visitors -->
+<script src="tablesideal.patch.js"></script><!-- DAG monkeypatching -->
+<script src="render.js"></script>
+<script type="text/javascript" src="flapjax.js"></script>
+ <script src="jquery-1.6.1.js"></script>
+ <script>
+  $(function () {
+    $('h2').each(function (i) {
+      if (i > 1) {
+        insertDomB(A({name: i}), $(this).get(0), 'after');
+        insertDomB(LI(A({href: "#" + i}, $(this).get(0).innerHTML)), $('#faq').get(0), 'end');
+        insertDomB(SPAN(i + ". "), $(this).get(0), 'beginning');
+      }
+      });
+  });
+</script>
+<script>
+
+if (false) { //log
+logger = 
+  {log: function (i) { 
+      if ((typeof(i) == 'string') && i.indexOf('skipping text node') != -1) return;
+      else console.log(i);
+    },
+  group: console.group,
+  groupEnd: console.groupEnd,
+  error: console.error};
+
+} else { //no log
+  logger = {log: function () {}, group: function (){}, groupEnd: function(){}, error: function() {} };
+}
+
+window.addEventListener("load", function () {
+    $("#htmlSrc")[0].innerHTML 
+      = $("#contents")[0].innerHTML.replace(/</g,"&lt;").replace(/>/g,"&gt");
+
+    coreDraw(document.getElementById('exTable1Data'),document.getElementById('exTable1Canvas'));
+    coreDraw(document.getElementById('exTable2Data'),document.getElementById('exTable2Canvas'));
+    coreDraw(document.getElementById('rowSpanData'),document.getElementById('rowSpanCanvas'));
+    coreDraw(document.getElementById('contents'),document.getElementById('canvas'));
+    
+      
+  }, false);
+
+</script>
+</head>
+<body>
+
+<h2>Synthesizing an <i>automatic table layout solver</i> with FTL</h2>
+<p>At the Mozilla/Berkeley meeting on 2/10, an important concern was whether our FTL synthesizer
+supports difficult features of CSS like tables, floats, and text. 
+As promised, this document shows how we generated code for the core of <i>automatic table layout</i>.
+We were able to generate parallel code almost entirely automatically, and we have been planning a language extension to support
+the one part that we could not handle. 
+
+<p>I picked two features from the CSS standard to implement:
+<ol>
+<li>Columns as wide as their widest cell and rows as tall as their tallest cell:
+<div><i>FTL<span style="display:inline-block; width: 8em">&nbsp;</span>HTML</i></div>
+<div style="width:1000em; overflow: hidden;">
+<canvas id="exTable1Canvas" style="border: 0px dashed gray; margin-right: 1em; float: left" width=110 height=110></canvas>
+<Top id="exTable1Data">
+      <TableBox refName="child"  borderc="transparent">
+      <Cols refName="columns" borderc="black"></Cols>
+      <Row refName="rows" borderc="black">
+        <Cell refName="childs" borderc="transparent"></Cell>           
+        <Cell refName="childs" borderc="transparent"><VBox refName="childs" borderc="blue"><Leaf refName="childs"></Leaf><Leaf refName="childs"></Leaf></VBox></Cell>           
+      </Row>
+      <Row refName="rows" borderc="black">
+        <Cell refName="childs" borderc="transparent"><HBox refName="childs" borderc="blue"><Leaf refName="childs"></Leaf><Leaf refName="childs"></Leaf></HBox></Cell>           
+        <Cell refName="childs" borderc="transparent"></Cell>           
+      </Row>
+</Top>
+
+<table border=1 style="margin-left: 1em; float: left">
+<tr>
+  <td align="center">
+
+  </td>
+  <td>a tall cell<br/>that  increases <br/>the height<br/>of the row</td>  
+<tr>
+  <td>a really wide cell that increases the width of the column</td>
+  <td>&nbsp;</td>
+</table>
+</div>  
+
+<li style="margin-top:1em">Cells that span multiple rows or columns:
+
+<div><i>FTL<span style="display:inline-block; width: 8em">&nbsp;</span>HTML</i></div>
+<div style="width:1000em; overflow: hidden;">
+<canvas id="exTable2Canvas" style="float: left; margin-right: 1em;border: 0px dashed gray" width=130 height=100></canvas>
+<Top id="exTable2Data">
+      <TableBox refName="child" borderc="black">
+      <Cols refName="columns" borderc="transparent"></Cols>
+      <Row refName="rows" borderc="transparent">
+        <Cell refName="childs" colSpan="2" borderc="transparent">
+          <HBox refName="childs" borderc="blue">
+            <Leaf refName="childs"></Leaf>
+            <Leaf refName="childs"></Leaf>
+            <Leaf refName="childs"></Leaf>
+            <Leaf refName="childs"></Leaf>
+          </HBox>
+        </Cell>           
+        <Cell refName="childs" rowSpan="2" borderc="transparent">
+          <VBox refName="childs" borderc="blue">
+            <Leaf refName="childs"></Leaf>
+            <Leaf refName="childs"></Leaf>
+            <Leaf refName="childs"></Leaf>
+            <Leaf refName="childs"></Leaf>
+          </VBox>
+        </Cell>           
+      </Row>
+      <Row refName="rows" borderc="transparent">
+        <Cell refName="childs" borderc="transparent"><HBox refName="childs" borderc="blue"><Leaf refName="childs"></Leaf></HBox></Cell>           
+        <Cell refName="childs" borderc="transparent"><HBox refName="childs" borderc="blue"><Leaf refName="childs"></Leaf></HBox></Cell>           
+      </Row>
+</Top>
+  <div style="display: inline-block; border: 1px solid black">
+  <table border=0 style="margin-left: 3em" style="float: left;">
+    <tr>
+      <td colspan="2"><span style="border: 1px solid gray; padding: 1px">span inside a cell that spans two columns</span></td>
+      <td rowspan="2"><span style="border: 1px solid gray; padding: 1px; display: inline-block; width: 8.5em">span inside a cell that spans two rows</span></td>
+    </tr>
+    <tr>
+      <td><span style="border: 1px solid gray; padding: 1px">span inside a singleton cell</span></td>
+      <td><span style="border: 1px solid gray; padding: 1px">span inside singleton cell</span></td>
+    </tr>
+  </table>
+  </div>
+</div>  
+</ol>
+These are tricky features because attribute grammars are best for computing <i>scalar values</i> (e.g., numbers)
+over a <i>static tree</i> (e.g., the parsed document). 
+Automatic table layout, however, involves computing a DAG (the grid) and then computing attributes over that.
+
+<p>Our experience with tables highlights strategies for handling tricky features:
+<ul>
+<li>Code can be written in another language and called from the specification as foreign functions.
+<li>Generated code can be manually patched. 
+To help reapply the patch to future generated code, we can extend the specification to require the invariants needed by the patch.
+<li>As common patterns emerge, we can and should bake them into the language.
+</ul>
+
+Our final implementation is primarily code generated, with some extra code in the form of an external library and a monkey patch.
+For the generated code, FTL emitted a sequence of parallel tree traversals.
+We also generated a HTML5 (JavaScript+canvas) implementation: you can see it running live in the colorful examples above!
+
+
+<p>The rest of this document overviews our HTML5 implementation and shows the code.
+
+<h2>Contents</h2>
+    <ol id="faq"></ol>
+
+
+<h2>The challenges in a nutshell</h2>
+For this experiment, we picked the following challenges:
+<ol>
+<li>Finding a sequence of parallel tree traversals that implement table layout solving.
+<!--For example, could the intrinsic widths of nodes be determined in a bottom-up tree traversal where the nodes on a level are computed over in parallel? This is problematic because the CSS specification was designed with only sequential traversals in mind, and those traversals can have serializing dependencies across different nodes.-->
+<li>Converting an HTML table's parse tree into a grid of cells.
+<!--The table is effectively a directed acyclic graph because cells have two parents: its row and column. We must compute this data structure, which is challenging because our solver's expression language is primarily over scalar values such as numbers.-->
+<li>Computing over the table's generated DAG.
+<!--This is problematic because the FTL synthesizer was designed for trees. For example, if a cell's parent column defines its width and the parent row defines its height, our solver would report an error. The solver would think only one of the row or column was the parent: if the row is the parent, the width is undefined, and if a column, then the height is undefined.-->
+</ol>
+
+
+<p>We separately describe our solution to each problem.
+
+
+<h2>Solution: parallel tree traversal strategy</h2>
+
+Our synthesizer found several valid sequences of tree traversals. The sequence we chose is:
+<table border=1>
+<tr align="center">
+<td>Tree traversal 0:<br/><i> top down</i></td>
+<td>Tree traversal 1:<br/><i> top down</i></td>
+<td>Tree traversal 2:<br/><i> bottom up</i></td>
+<td>Tree traversal 3:<br/><i> top down</i></td>
+<td>Tree traversal 4:<br/><i> top down</i></td>
+<td>Tree traversal 5:<br/><i> bottom up</i></td>
+<td>Tree traversal 6:<br/><i> top down</i></td>
+<tr valign="top"><td>
+<ul>
+<li>  numchilds
+<li>  rownum
+<li>  intrinscolcount
+<li>  row::cells
+</ul></td>
+<td>
+<ul>
+<li>  col::numchilds
+<li>  row::colassignment
+<li>  colcount
+<li>  columnnum
+<li>  cellsready
+</ul>
+</td>
+<td>
+<ul>
+<!--<li>  row::computedwidth-->
+<li>  intrinsminwidth
+<li>  intrinsprefwidth
+</ul>
+</td>
+
+<td>
+<ul>
+<li>  computedwidth
+<li>  availablewidth
+</ul>
+</td>
+
+<td>
+<ul>
+<li>  cols::tablecontentwidth
+<li>  relx
+<li>  absx
+</ul>
+</td>
+
+<td>
+<ul>
+<li>  row::tablecontentwidth
+<li>  tablebox::tablecontentheight
+<li>  computedheight
+<li>  intrinsheight
+<li>  rely
+</ul>
+</td>
+
+<td>
+<ul>
+<li>  col::tablecontentheight
+<li>  absy
+</ul>
+</td>
+
+</table>
+<p>Parallelizing a specification is not fully automated: our tool <i>assists</i> authoring. 
+Every time we extended the specification, we reran the synthesizer to check for ambiguities, conflicts, and the existence of <i>any</i> parallel implementation. 
+Once the specification was feature-complete,  we told the synthesizer to look for other
+sequences of parallel traversals in order to find a shorter one. </p>
+
+<p>We locked in the sequence it found as part of the specification. 
+This ensured that subsequent specifications tweaks did not break it.
+Furthermore, this also simplified patching generated code. 
+For example, our patch safely modifies the 7 calls to tree traversals because we know that future
+generated code will emit the same sequence and so the patch will still apply.
+
+<p>Telling the generator to use a sequence of 7 top down (td) and bottom up (bu) traversals was just standard Prolog:
+<pre>
+Schedule {
+  ...
+  P = [(_,td,_,_,_),(_,td,_,_,_),(_,bu,_,_,_),(_,td,_,_,_),(_,td,_,_,_),(_,bu,_,_,_),(_,td,_,_,_)]
+</pre>
+The underscores signify no preference for other configurable properties of the traversals. 
+For the example, the first entry in each tuple signifies no preference attributes must be solved in that traversal.
+
+
+
+<p>
+Close inspection of the traversal sequence reveals room for future improvement. 
+For example, we may be able to combine traversals 0 with 1 and 3 with 4. 
+The transformations involved are reminiscent of loop <a href="http://en.wikipedia.org/wiki/Polytope_model">skewing</a>
+and <a href="http://en.wikipedia.org/wiki/Loop_fusion">fusion</a>.
+</p>
+
+<h2>Solution: computing the table grid with foreign functions</h2>
+
+<canvas id="rowSpanCanvas" style="border: 0px dashed gray; margin-right: 1em; float: left" width=130 height=170></canvas>
+<Top id="rowSpanData">
+      <TableBox refName="child">
+      <Cols refName="columns"></Cols>
+      <Row refName="rows"  borderc="transparent">
+        <Cell refName="childs" rowSpan="2">
+          <VBox refName="childs">
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+          </VBox>
+        </Cell>   
+        <Cell refName="childs"><HBox refName="childs"><Leaf refName="childs"></Leaf></HBox></Cell>           
+        <Cell refName="childs"><HBox refName="childs"><Leaf refName="childs"></Leaf></HBox></Cell>           
+      </Row>
+      <Row refName="rows" borderc="transparent">
+        <Cell refName="childs" rowSpan="2">
+          <VBox refName="childs">
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+          </VBox>
+        </Cell>           
+        <Cell refName="childs"><HBox refName="childs"><Leaf refName="childs"></Leaf></HBox></Cell>           
+      </Row>
+      <Row refName="rows"  borderc="transparent">
+        <Cell refName="childs"><HBox refName="childs"><Leaf refName="childs"></Leaf></HBox></Cell>           
+        <Cell refName="childs" rowSpan="2">
+          <VBox refName="childs">
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+            <Leaf refName="childs" height=6></Leaf>
+          </VBox>
+        </Cell>         </Row>
+      <Row refName="rows"  borderc="transparent">
+        <Cell refName="childs"><HBox refName="childs"><Leaf refName="childs"></Leaf></HBox></Cell>           
+        <Cell refName="childs"><HBox refName="childs"><Leaf refName="childs"></Leaf></HBox></Cell>           
+      </Row>
+</Top>
+
+Our specification computes a grid structure that maps a cell node to both a row node and a column node.
+This feature is tricky because the cells in a row may span multiple rows <span class="snippet">(&quot;rowspan=<i>n</i>&quot;)</span> or columns:  
+a cell of a row must be placed in the first available column not taken by any earlier multi-span cell. 
+For an example, consider the impact of the three multirow cells on the left.
+
+<p>Our approach was to implement the code that appends a row of cells to a grid 
+as an external library. In order for the specification to safely call this library, 
+we only need to guarantee that the functions provide a pure interface. 
+Our row append function is similar to the list function <span class="snippet">cons</span> that 
+takes an existing collection and returns a new one that contains an additional element.
+
+<p>In the specification, a table computes computes its grid by iteratively computing over its rows. A partially
+completed grid is computed for each row by adding to the results from the previous row:
+
+<pre>
+<b>class</b> TableBox {
+  <b>loop</b> rows {
+    rows.<font color="maroon">colAssignment</font> :=
+      <b>fold</b>
+        <font color="green">mtCols</font>(colCount) 
+        .. 
+        <font color="navy">columnsAppendRow</font>(rows$-.<font color="maroon">colAssignment</font>, rows$i.cells, rows$i.rowNum);
+</pre>
+ 
+The initial foreign function call <span class="snippet"><font color="green">mtCols(colCount)</font></span> creates an empty grid of <span class="snippet">colCount</span> columns. 
+The partially completed grid up to row <i>i</i> of the loop is defined in terms of the grid at row <i>i - 1</i> of the loop, represented with variable <span class="snippet">rows$-.<font color="maroon">colAssignment</font></span>.
+The foreign function <span class="snippet"><font color="navy">columnsAppendRow</font></span> will take the grid of the previous step and the cells ADT <span class="snippet">rows$i.cells</span> for row <span class="snippet">rows$i.rowNum</span> to compute the partial grid for the current row, etc. 
+
+
+<!-- 
+Not shown here, in the <i>Row</i> class, a cell's column is the foreign lookup call <i>childs.column := columnsGetCol(<font color="maroon">colAssignment</font>, childs.cellNum)</i>
+-->
+
+
+<!--
+Each row can then inspect the (partially computed) grid <i><font color="maroon">colAssignment</font></i> to find the column number for cell <i>childs.cellNum</i> on the bottom-most row by using the foreign function <i>columnsGetCol</i>. 
+-->
+
+<p>Foreign functions should support incremental and parallel use. 
+For example, in an incremental layout engine, if the bottom row changes, it should be safe to only call <span class="snippet"><font color="navy">columnsAppendRow</font></span>
+with the <span class="snippet"><font color="maroon">colAssignment</font></span> previously computed for the second-to-last row. 
+A destructive implementation <span class="snippet"><font color="navy">columnsAppendRow</font></span> would therefore be incorrect while a pure one (like <span class="snippet">cons</span>) would be safe.
+
+</p>
+
+<h2>Solution: computing over a dynamic grid rather than a static tree</h2>
+In the computed grid, a cell has two parents: its row and its column.
+Unfortunately, attribute grammars were designed for traversing trees, not such DAGs, and assume the structure is statically known.
+Our interim solution is to patch the generated code to use a DAG traversal and update the specification to know about it.
+Going forward, we plan to extend the specification language.
+
+<!--
+<p>Consider the problems of defining a cell's <i>x</i>'s relative to its column and its  <i>y</i>'s relative to its row:
+<pre>
+class Col {
+  loop childs {
+    childs.relX := 5;    
+    childs.absX := absX + childs$i.relX;
+...
+class Row {
+  loop childs {
+    childs.relY := 5;
+    childs.absY := absY + childs$i.relY;      
+</pre>
+</p>
+-->
+<!--We solved the problems of computing over a DAG rather than a tree and a dynamically computed graph rather than a static one: -->
+<ol>
+<li><b>Dynamically computed graph structure.</b> 
+
+A column can compute the <span class="snippet">absX</span> of its cells only after it knows which particular cells are its own. 
+The challenge is that the cells are only known after column numbers are computed in traversal #2.
+
+
+<p>The first part of our solution is to  <i>monkey patch</i> the generated column traversal code to 
+replace the children lookup with one that examines the rows for cells with the right column number:
+<pre>
+getChildrenRaw = getChildren;
+getChildren = patchedGetChildren;
+visit_i(node, colv); //column visit using patched global <i>getChildren</i>
+getChildren = oldGet;
+</pre>
+</p>
+
+<p>Second, we specified that computations that access a column's cells must run only after the cells are known. 
+We expressed the ready condition in the specification as attribute <span class="snippet">cellsready</span>, which is simply the value of the last <span class="snippet"><font color="navy">columnsAppendRow</font>()</span> grid call.
+To orthogonally express the dependency on <span class="snippet">cellsready</span> for  column computations, we added morescheduling constraints:
+<pre>
+schedule { 
+  "asserta(assignment(cols, self, intrinsprefwidth, self, cellsready)),
+   asserta(assignment(cols, self, intrinsminwidth, self, cellsready)),
+</pre>
+The synthesizer will now schedule column cell computations only after <span class="snippet">cellsready</span> is known.</p>
+</li>
+<li><b>Two parents (DAGs).</b>
+
+<p>To support cells with two parents, we again modified the specification and generated code.
+
+<p>First, we modified the specification to pass it through our synthesizer. In the original specification,
+a column specifies the <span class="snippet">absX</span> attribute of its child cell, and a row, its <span class="snippet">absY</span>.
+The synthesizer would rightfully reject this because, in a tree, a cell has only one parent.
+If the parent is a column, the <span class="snippet">absY</span> attribute is undefined, and for a row, the <span class="snippet">absX</span>.
+We therefore told that synthesizer that external code would handle these attributes. For example, for columns, we specified:
+<pre>
+class Col {
+  phantom {
+    childs.absY;
+</pre>
+The synthesizer can now assume that the external code provides definitions for attribute <span class="snippet">childs.absY</span>  and will not emit code to compute it.
+
+<p>Second, we patched the tree traversal code to use the DAG order. 
+Our usual top down parallel traversal would be incorrect: 
+as a cell's column is a cousin in the parse tree, the column might not be run before the cell.
+In our patch, a cell's row and column is traversed before the cell.</p>
+
+</li>
+
+</ol>
+
+We are planning extensions to FTL for what we believe are common enough cases. 
+For example, we plan to allow associating a column with its cells by using a mechanism similar to selectors:
+<pre>
+class Col {
+  children {
+    childs : [ CellI ] = ../rows/childs[.column == self.colNum];
+</pre>
+The cells of a column are those from rows in the same table such that the cell's column number matches that of the column. 
+FTL will generate the code to find these cells. 
+Furthermore, the synthesizer would see that should schedule finding those cells <i>after</i> the column numbers are found
+and <i>before</i> any computation over them.
+<!--
+<p>The following example shows a table widget we specified in FTL, found parallelism in, and generated an HTML5 engine: the picture below is a live run of the engine!</p>
+
+<p>The widget is defined mostly in standard FTL. Two parts are not; we are experimenting with extensions to handle them and, as is, they provide a good lesson in how to mix with foreign code. </p>
+
+<p>The idea is that we work <i>with</i> the synthesizer and code generator. In developing this demo, we actually did not the final parallelization scheme: it found the basic schedule, and as we modified the code, ensured we didn't violate the scheme. In fact, near the end of the experience, we used the synthesizer to find a shorter schedule than what we working with throughout most of the initial development! Furthermore, we try to stay in FTL as much as possible because of the code generation benefits: the code shown here can be (provably) automatically parallelized and incrementalized. </p>
+-->
+
+
+<h2>Example with multiple node types</h2>
+The following (live) rendering uses several types of boxes. The document, widget specification, generated code, foreign functions, and monkey patch are all below.
+<div><canvas id="canvas"/></div>
+<Top id="contents">
+  <WrapBox refName="child" width="500">
+          <Leaf refName="childs" width="100"></Leaf>  
+          <Leaf refName="childs" width="100"></Leaf>  
+          <Leaf refName="childs" width="100"></Leaf>  
+          <Leaf refName="childs" width="100"></Leaf>  
+          <Leaf refName="childs" width="100"></Leaf>  
+    <TableBox refName="childs">
+      <Cols refName="columns"></Cols>
+      <Row refName="rows">
+        <Cell refName="childs">
+        </Cell>           
+        <Cell refName="childs" rowspan="2" borderc="orange">
+          <VBox refname="childs">
+            <Leaf refName="childs"></Leaf>  
+            <Leaf refName="childs"></Leaf>  
+            <Leaf refName="childs"></Leaf>  
+            <Leaf refName="childs"></Leaf>  
+            <Leaf refName="childs"></Leaf>
+          </VBox>
+        </Cell>           
+        <Cell refName="childs" rowspan="2" borderc="orange">
+          <WrapBox refName="childs">
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+          </WrapBox>
+        </Cell>           
+        <Cell refName="childs">
+          <VBox refname="childs">
+          <Leaf refName="childs"></Leaf>          
+          <Leaf refName="childs"></Leaf>          
+          </VBox>
+        </Cell>
+      </Row>
+      <Row refname="rows">
+        <Cell refName="childs">
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+        </Cell>           
+        <Cell refName="childs" height="100">
+          <Leaf refName="childs"></Leaf>          
+        </Cell>
+        <Cell refName="childs" height="100">
+        </Cell>
+      </Row>
+      <Row refname="rows">
+        <Cell refName="childs" colspan="2" borderc="#F0F">
+          <HBox refName="childs">
+            <Leaf refName="childs"></Leaf>          
+            <Leaf refName="childs"></Leaf>          
+            <Leaf refName="childs"></Leaf>          
+            <Leaf refName="childs"></Leaf>                  
+          </HBox>
+        </Cell>
+        <Cell refName="childs">
+        </Cell>
+        <Cell refName="childs" height="100">
+        </Cell>
+        <Cell refName="childs">
+        </Cell>
+      </Row>
+    </TableBox>
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs"></Leaf>  
+     <Leaf refName="childs" width="100"></Leaf>  
+     <Leaf refName="childs" width="100"></Leaf>  
+
+  </WrapBox>
+</Top>
+
+<p>The node types are denoted by color:
+<ul>
+  <li style="border: 1px blue solid; margin: 10px; padding: 5px">Blue: &lt;WrapBox&gt;</li>
+  <li style="border: 1px black solid; margin: 10px; padding: 5px">Black: &lt;Leaf&gt;</li>
+  <li style="border: 1px gray solid; margin: 10px; padding: 5px">Gray: &lt;Cell&gt;</li>
+  <li style="border: 1px orange solid; margin: 10px; padding: 5px">Orange: &lt;Cell rowspan="2"&gt;</li>
+  <li style="border: 1px #F0F solid; margin: 10px; padding: 5px">Pink: &lt;Cell colspan="2"&gt;</li>
+  <li style="border: 1px green solid; margin: 10px; padding: 5px">Green: &lt;Row&gt;</li>
+  <li style="border: 1px red solid; margin: 10px; padding: 5px">Red: &lt;Column&gt;</li>
+  <li style="border: 1px #CCC solid; margin: 10px; padding: 5px">Light gray: &lt;TableBox&gt;</li>
+</ul>
+
+All nodes are by default shrink-to-fit (unless vertical/horizontal stacking) and can have an overriding attribute-defined size.
+
+
+<h2>Document source</h2>
+The document is similar to standard HTML. Note that, except when overridden through attributes, the width, height, x, and y of elements are not specified. Likewise, cells have a default colspan/rowspan of 1, except for a few cells that span 2 rows or columns. The layout most solve for the positions of elements, including which row/column a cell is in.
+<pre id="htmlSrc" class="code">
+asdf
+</pre>
+<h2>Widget sources</h2>
+The widget is mostly specified in FTL. Note the (optional) use of scheduling constraints at the top and, to allow foreign functions to compute some values, phantom attribute sections for rows and columns.
+<iframe src="tablesideal.ftl"></iframe>
+<h2>Monkey patch</h2>
+After the layout engine is loaded, we run the following monkey patcher. It modifies tree traversals near table elements. 
+<ol>
+<li>The second time a table is visited, a monkey patched call to dynamically create implicit column cells.</li>
+<li>Whenever a column is visited, the <span class="snippet">getChildren</span> function is swapped to find cells of the right column number.</li>
+<li>Finally, the patch also changes the visit order for top down visits to guarantee all rows and columns are visited before the cells of a table, and the reverse for bottom up tree traversals.</li>
+</ol>
+<iframe src="tablesideal.patch.js"></iframe>
+<h2>Table ADT</h2>
+Cell positions in a table are greedily computed top-down and left-to-right. Rows are traversed consecutively and added to the table one at a time. Adding a row involves outputing which columns the cells of the row belong to and the updated constraints for adding the next row. Cell positions are just intermediate values from this computation.
+<iframe src="tablesideal.helper.js"></iframe>
+<h2>Generated layout engine</h2>
+The code here is automatically generated; we did not modify it at all. It is fairly naive for the HTML5 backend and automatically includes logging code. The empty code blocks correspond to phantom attributes. Visitor dispatch code is near the bottom.
+<iframe src="tablesideal.js"></iframe>
+</body>
+</html>

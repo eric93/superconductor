@@ -1,0 +1,87 @@
+<html>
+<head>
+
+</head>
+<body>
+
+<div style="width: 200px; border: 1px solid blue">
+  parent
+  <div style="background-color: blue; color: white">is 200px</div>
+  <div style="border: 1px solid black; float: left">  
+    <div>shrink to fit child should at least contain this box below</div>
+    <div style="width: 100px; border: 1px solid red">min box</div>
+    <div style="float: left; border: 1px solid magenta">
+      and maybe will grow to contain this big floatttttttttttttttttttttttttttttttttttttttttttttttttttttttt
+    </div>
+    <div style="float: left; border: 1px solid magenta">
+      and maybe will grow to contain this big floatttttttttttttttttttttttttttttttttttttttttttttttttttttttt
+    </div>
+    <div style="float: left; border: 1px solid magenta; width: 5em">
+      tiny float
+    </div>
+    <div style="float: left; border: 1px solid magenta; width: 5em">
+      tiny float
+    </div>
+    
+  </div>
+</div>
+<div style="clear:both">(clear)</div>
+<div style="border: 1px solid blue">
+  parent 
+  <div style="background-color: blue; color: white">is auto</div>
+  <div style="border: 1px solid black; float: left">  
+    <div>shrink to fit child should at least contain this box below</div>
+    <div style="width: 100px; border: 1px solid red">min box</div>
+    <div style="float: left; border: 1px solid magenta">
+      and maybe will grow to contain this big floatttttttttttttttttttttttttttttttttttttttttttttttttttttttt
+    </div>
+    <div>block</div>
+    <div style="float: left; border: 1px solid magenta">
+      and maybe will grow to contain this big floatttttttttttttttttttttttttttttttttttttttttttttttttttttttt
+    </div>
+    <div style="float: left; border: 1px solid magenta; width: 5em">
+      tiny float
+    </div>
+    <div style="float: left; border: 1px solid magenta; width: 5em">
+      tiny float
+    </div>
+    <div>block</div>    
+  </div>
+</div>
+
+<div style="clear:both">(clear)</div>
+<div style="border: 1px solid blue">
+  parent
+  <div style="background-color: blue; color: white">is auto</div>
+  <div style="border: 1px solid black; float: left">  
+    <div>shrink to fit child should at least contain this box below</div>
+    <div style="width: 100px; border: 1px solid red">min box</div>
+    <div style="float: left; border: 1px solid magenta">
+      and maybe will grow to contain this big floatttttttttttttttttttttttttttttttttttttttttttttttttttttttt
+    </div>
+    <div style="float: left; border: 1px solid magenta">
+      and maybe will grow to contain this big floatttttttttttttttttttttttttttttttttttttttttttttttttttttttt
+    </div>
+    <div>block</div>
+    <div style="float: left; border: 1px solid magenta; width: 5em">
+      tiny float
+    </div>
+    <div style="float: left; border: 1px solid magenta; width: 5em">
+      tiny float
+    </div>
+    <div>block</div>    
+  </div>
+</div>
+
+<div style="clear:both">
+<h1>Demonstration</h1>
+This test highlights that in a block layout, the intrinsic width of floats is added as a max.  
+
+<p>This test also reveals a rendering bug in Opera: the floats are painted <i>before</i> their parent border.
+
+<p>This test also reveals a bug in WebKit. In the middle set of boxes, a block's content seems to move around one float but not all.
+</div>
+
+
+</body>
+</html>

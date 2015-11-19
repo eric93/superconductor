@@ -1,0 +1,14 @@
+<html>
+    <head><script type = "text/javascript">
+            var i = new Image();
+            function onLoad(){
+            i.onload = function(){document.write("Image loaded");};
+            i.src = document.getElementById("img").src;
+            }
+        </script>
+    </head>
+    <body onload = "onLoad();">
+        <p>Hello World</p>
+        <img id = "img" style = "display: none" src = "css.jpg"></img>
+    </body>
+</html>

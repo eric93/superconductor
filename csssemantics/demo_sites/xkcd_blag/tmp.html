@@ -1,0 +1,33 @@
+        <script type = "text/javascript" src = "rendering/sizzle.js"></script>
+        <script type = "text/javascript" src = "rendering/runSelectors.js"></script>
+        <script type = "text/javascript" src = "rendering/DOMToRender.js"></script>
+        <script type = "text/javascript" src = "rendering/render.js"></script>
+        <script type = "text/javascript" src = "rendering/tablesideal.helper.js"></script>
+        <script type = "text/javascript" src = "rendering/bogus_css.js"></script>
+        <script type = "text/javascript" src = "rendering/tablesideal.patch.js"></script>
+        <script type = "text/javascript" src = "rendering/cssvalues.js"></script>
+        <script type = "text/javascript">
+            state = undefined;
+            images = [];
+            otherAttrs = [];
+            attribMap = {borders: "border-style", borderw: "border-width", borderc: "border-color", bgc: "background-color", intrinsfontsize : "font-size",  verticalalign : "vertical-align"};
+            window.removeEventListener("load",init,false);
+            origInit = init;
+            init = function(){
+                var docImages = Sizzle("img");
+                var numloaded = 1;
+                for(var k = 0; k < docImages.length; k++){
+                    var i = new Image();
+                    i.onload = function(){
+                        if(numloaded >= docImages.length)
+                            origInit();
+                        else
+                            numloaded ++;
+                    };
+                    docImages[k].setAttribute("style", (docImages[k].getAttribute("style") == null ? "" : docImages[k].getAttribute("style")) + "; imagehandle : "+ k + ";" );
+                    images.push(i);
+                    i.src = docImages[k].src;
+                }
+            }
+            window.addEventListener("load", init, false); 
+        </script>

@@ -1,0 +1,37 @@
+<html>
+    <head>
+
+        <script type = "text/javascript" src = "sizzle.js"></script>
+        <script type = "text/javascript" src = "runSelectors.js"></script>
+        <script type = "text/javascript" src = "DOMToRender.js"></script>
+        <script type = "text/javascript" src = "render.js"></script>
+        <script type = "text/javascript" src = "image.js"></script>
+        <style>
+            img {borderwidth : 0; bordercolor: #000000 ; margin : 0; padding: 0;}
+        </style>
+        <script type = "text/javascript">
+            state = undefined;
+            images = [];
+            otherAttrs = [];
+            window.removeEventListener("load",init,false);
+            origInit = init;
+            init = function(){
+                var i = new Image();
+                i.onload = function(){origInit();};
+                Sizzle("img")[0].setAttribute("style", (Sizzle("img")[0].getAttribute("style") == null ? "" : Sizzle("img")[0].getAttribute("style")) + " imagehandle : 0;");
+                images.push(i);
+                i.src = Sizzle("img")[0].src;
+            }
+            window.addEventListener("load", init, false); 
+        </script>
+    </head>
+    <body>
+        <canvas id = "canvas">
+        <contents id = "contents">
+            <root>
+                <img style = "refName: child;" src = "css.jpg"></img>
+            </root>
+        </contents>
+        </canvas>
+    </body>
+</html>

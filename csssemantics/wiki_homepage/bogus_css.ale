@@ -1,0 +1,1026 @@
+/*schedule {
+    "P = [(_,td,_,_,_),(_,td,_,_,_),(_,bu,_,_,_),(_,td,_,_,_),(_,td,_,_,_),(_,bu,_,_,_),(_,tdLtrU,_,_,_),(_,td,_,_,_)]"
+}*/
+//inorder = tdLtrU
+
+//standard interfaces and traits
+
+interface Node { 
+  //Drawing
+  var canvas : int;
+  var render : int;
+
+  //Heights
+  var intrinsHeight : int;
+  var computedHeight : int;
+
+  //Inorder attributes
+  var relRightX : int;
+  var relX : int;
+  var absX : int;
+  var relRightY : int;
+  var relY : int;
+  var absY : int;  
+  var totalHeightInit : int;
+  var totalHeightLast : int;
+  var oldLineH : int;
+  var maxLineH : int;
+
+  input position : string = "static";
+  input left : string = "auto";
+  input right : string = "auto";
+  input top : string = "auto";
+  //Containing Block (for non-positioned elements)
+  var minX : int;
+  var minY : int;
+  var maxWidth : int;
+  //Closest positioned ancestor
+  var posX : int;
+  var posY : int;
+  var posWidth : int;
+
+  //Pre-emptive wrapping
+  var firstChildWidth : int;
+  var rightPadding : int;
+
+  //Backgrounds&Borders
+  var inhColor : color;
+  input color : color = "none";
+  input bgc : color = "none";   
+  input borderw : int = 0;
+  input borders : string = "none";
+  input borderc : color = "none";
+  var inhFontSize : string;
+  input intrinsFontSize : string;
+  var usedFontSize : string;
+
+  //Widths
+  input width : string = "auto";
+  var intrinsPrefWidth : int;
+  var intrinsMinWidth : int;
+  var computedWidth : int;
+  var inhComputedWidth : int;
+
+  //box model
+  input marginTop : string = 0;
+  input marginBottom : string = 0;
+  input marginLeft : string = 0;
+  input marginRight : string = 0;
+  var mt : int;
+  var mb : int;
+  var ml : int;
+  var mr : int;
+  input paddingTop : string = 0;
+  input paddingBottom : string = 0;
+  input paddingLeft : string = 0;
+  input paddingRight : string = 0;
+  var pt : int;
+  var pb : int;
+  var pl : int;
+  var pr : int;
+  
+  var childNum : int;
+}
+
+trait intrinsicWidths{
+    attributes{
+        var sumMarginsPadding : int;
+        var selfIntrinsWidth : int;
+    }
+    actions{
+        sumMarginsPadding := (marginTop == "auto" ? 0 : getLength(marginTop,usedFontSize,0)) + 
+                             (marginBottom == "auto" ? 0 : getLength(marginBottom,usedFontSize,0)) + 
+                             (marginLeft == "auto" ? 0 : getLength(marginLeft,usedFontSize,0)) + 
+                             (marginRight == "auto" ? 0 : getLength(marginRight,usedFontSize,0)) + 
+                             (paddingTop == "auto" ? 0 : getLength(paddingTop,usedFontSize,0)) + 
+                             (paddingBottom == "auto" ? 0 : getLength(paddingBottom,usedFontSize,0)) + 
+                             (paddingLeft == "auto" ? 0 : getLength(paddingLeft,usedFontSize,0)) + 
+                             (paddingRight == "auto" ? 0 : getLength(paddingRight,usedFontSize,0)); 
+
+        selfIntrinsWidth := (getWidth(width,0) == "auto" ? 0 : getWidth(width,0));
+    }
+}
+trait positioned {
+    attributes{
+      var posComputedWidth : int;
+      var posWidthTmp : int;
+      var posRelX : int;
+      var posRelY : int;
+      var posMinWidth : int;
+      var posPrefWidth : int;
+
+      var pml : int;
+      var pmr : int;
+      var pmt : int;
+      var pmb : int;
+    }
+    actions{
+      //Take the element out of normal flow
+      intrinsPrefWidth := 0;
+      intrinsMinWidth := 0;
+      firstChildWidth := 0; 
+      relRightX := relX;
+      relRightY := relY;
+      maxLineH := oldLineH;
+      totalHeightLast := totalHeightInit;
+      computedHeight := 0;
+      computedWidth := 0;
+
+      pml := (marginLeft != "auto") ? getLength(marginLeft,usedFontSize,posWidthTmp) :(
+        (getWidth(width,0) != "auto" && left != "auto" && right != "auto") ? (marginRight == "auto" ? (posWidthTmp - pr - pl - getLength(left,posWidthTmp) - getLength(right, posWidthTmp) - getWidth(width,posWidthTmp))/2 : 
+        (posWidthTmp - pr - pl - getLength(left,posWidthTmp) - getLength(right,posWidthTmp) - getLength(marginRight,usedFontSize,posWidthTmp) - getWidth(width,posWidthTmp))) : 0);
+      pmr := (marginRight != "auto") ? getLength(marginRight,usedFontSize,posWidthTmp) : (
+        (getWidth(width,0) != "auto" && left != "auto" && right != "auto") ? (marginLeft == "auto" ? (posWidthTmp - pr - pl - getLength(left,posWidthTmp) - getLength(right, posWidthTmp) - getWidth(width,posWidthTmp))/2 : 
+        (posWidthTmp - pr - pl - getLength(left,posWidthTmp) - getLength(right,posWidthTmp) - getLength(marginLeft,usedFontSize,posWidthTmp) - getWidth(width,posWidthTmp))) : 0);
+
+      pmt := marginTop == "auto" ? 0 : getLength(marginTop,usedFontSize,posWidth);
+      pmb := marginBottom == "auto" ? 0 : getLength(marginBottom,usedFontSize,posWidth);
+ 
+      posWidthTmp := position == "absolute" ? posWidth : getPageWidth() - 15;
+      posComputedWidth := getWidth(width,posWidth) != "auto" ? getWidth(width,posWidthTmp) : (
+        (left == "auto" || right == "auto" || marginLeft == "auto" || marginRight == "auto") ? 
+        min(max(posMinWidth, posWidthTmp), posPrefWidth) : (posWidthTmp - left - right - pml - pmr - pl - pr));
+
+      posRelX := (left != "auto") ? getLength(left,posWidthTmp) : (right == "auto" ? 0 : (posWidthTmp - pl - pr - pml - mr - right - posComputedWidth));
+      posRelY := (top == "auto") ? 0 : top;
+      absX := (position == "absolute" ? posX : 0) + posRelX;
+      absY := (position == "absolute" ? posY : 0) + posRelY;
+    }
+}
+
+trait posParent {
+    actions{
+        loop childs{
+            childs.posX := (position == "static" ? posX : absX + ml);
+            childs.posY := (position == "static" ? posY : absY + mt);
+            childs.posWidth := (position == "static" ? posWidth : computedWidth - ml - mr);
+        }
+    }
+}
+
+
+trait fontStyle{
+    attributes{
+        var usedColor : color;
+    }
+    actions{
+        usedColor := validColor(color) ? color : inhColor;
+        usedFontSize := validFontSize(intrinsFontSize) ? getFontSize(intrinsFontSize, inhFontSize) : inhFontSize;
+        loop childs{
+            childs.inhColor := usedColor;
+            childs.inhFontSize := usedFontSize;
+        }
+    }
+}
+
+trait shrinkToFitChilds{
+    actions{
+        loop childs{
+
+            childs.pt := getLength(childs$i.paddingTop,childs$i.usedFontSize,childs$i.maxWidth); 
+            childs.pb := getLength(childs$i.paddingBottom,childs$i.usedFontSize,childs$i.maxWidth); 
+            childs.pl := getLength(childs$i.paddingLeft,childs$i.usedFontSize,childs$i.maxWidth); 
+            childs.pr := getLength(childs$i.paddingRight,childs$i.usedFontSize,childs$i.maxWidth); 
+
+
+            childs.inhComputedWidth := (getWidth(childs$i.width, childs$i.maxWidth) != "auto") ? getWidth(childs$i.width,childs$i.maxWidth) : 
+                (min(childs$i.intrinsPrefWidth, max(childs$i.intrinsMinWidth, childs$i.maxWidth)));
+
+            childs.mt := childs$i.marginTop != "auto" ? getLength(childs$i.marginTop, childs$i.usedFontSize, childs$i.maxWidth) : 0;
+            childs.mb := childs$i.marginBottom != "auto" ? getLength(childs$i.marginBottom, childs$i.usedFontSize, childs$i.maxWidth) : 0;
+            childs.mr := childs$i.marginLeft != "auto" ? getLength(marginLeft, usedFontSize, maxWidth) : 0;
+            childs.ml := childs$i.marginRight != "auto" ? getLength(marginRight, usedFontSize, maxWidth) : 0;
+        }
+    }
+}
+
+trait blockWidthChilds{
+    actions{
+        loop childs{
+
+
+            childs.pt := getLength(childs$i.paddingTop,childs$i.usedFontSize,childs$i.maxWidth); 
+            childs.pb := getLength(childs$i.paddingBottom,childs$i.usedFontSize,childs$i.maxWidth); 
+            childs.pl := getLength(childs$i.paddingLeft,childs$i.usedFontSize,childs$i.maxWidth); 
+            childs.pr := getLength(childs$i.paddingRight,childs$i.usedFontSize,childs$i.maxWidth); 
+
+            childs.inhComputedWidth := (getWidth(childs$i.width, childs$i.maxWidth) != "auto") ? getWidth(childs$i.width, childs$i.maxWidth) :
+                max(childs$i.intrinsMinWidth, childs$i.maxWidth);
+
+            childs.ml := (childs$i.marginLeft != "auto") ? getLength(childs$i.marginLeft,childs$i.usedFontSize,childs$i.maxWidth) : 
+                (getWidth(childs$i.width,0) == "auto" ? 0 : (childs$i.marginRight == "auto" ? (childs$i.maxWidth - childs$i.pr - childs$i.pl - getWidth(childs$i.width, childs$i.maxWidth))/2 
+                : (childs$i.maxWidth - childs$i.pr - childs$i.pl - getWidth(childs$i.width,childs$i.maxWidth) - getLength(childs$i.marginRight,childs$i.usedFontSize,childs$i.maxWidth))));
+
+            childs.mr := (childs$i.marginRight != "auto" &&  (getWidth(childs$i.width,0) == "auto" || childs$i.marginLeft == "auto")) ? getLength(childs$i.marginRight,childs$i.usedFontSize,childs$i.maxWidth) : 
+                (getWidth(childs$i.width,0) == "auto" ? 0 : (childs$i.marginLeft  == "auto" ? (childs$i.maxWidth - childs$i.pr - childs$i.pl - getWidth(childs$i.width, childs$i.maxWidth))/2 
+                : (childs$i.maxWidth - childs$i.pr - childs$i.pl - getWidth(childs$i.width,childs$i.maxWidth) - getLength(childs$i.marginLeft,childs$i.usedFontSize,childs$i.maxWidth))));        
+
+            childs.mt := childs$i.marginTop != "auto" ? getLength(childs$i.marginTop, childs$i.usedFontSize, childs$i.maxWidth) : 0;
+            childs.mb := childs$i.marginBottom != "auto" ? getLength(childs$i.marginBottom, childs$i.usedFontSize, childs$i.maxWidth) : 0;
+       }
+    }
+}
+
+trait useInhWidth{
+    actions{
+        computedWidth := inhComputedWidth;
+    }
+}
+
+trait computeSelfHeight{
+    actions{
+        computedHeight := intrinsHeight;
+    }
+}
+
+trait relToMin{
+    actions{
+        absX := minX + relX + (position == "relative" ? fn(left,right) : 0);
+        absY := minY + relY + (position == "relative" ? fn(top) : 0);
+    }
+}
+trait posStrokeBox {
+  actions {
+    render := 
+      canvas + (validColor(bgc) ? paintRect(absX,absY,posComputedWidth,computedHeight,bgc) : 0) + 
+        (borders != "solid" ? 0 :  
+            paintLine(absX,absY, absX+posComputedWidth,absY, borderw,borderc) +
+            paintLine(absX + posComputedWidth, absY, absX + posComputedWidth, absY + intrinsHeight, borderw, borderc) + 
+            paintLine(absX + posComputedWidth, absY + intrinsHeight, absX, absY + intrinsHeight, borderw, borderc) +
+            paintLine(absX, absY + intrinsHeight, absX, absY, borderw, borderc)
+        );
+  }
+}
+trait strokeBox {
+  actions {
+    render := 
+      canvas + (validColor(bgc) ? paintRect(absX,absY,computedWidth,computedHeight,bgc) : 0) + 
+        (borders != "solid" ? 0 :  
+            paintLine(absX,absY, absX+computedWidth,absY, borderw,borderc) +
+            paintLine(absX + computedWidth, absY, absX + computedWidth, absY + computedHeight, borderw, borderc) + 
+            paintLine(absX + computedWidth, absY + computedHeight, absX, absY + computedHeight, borderw, borderc) +
+            paintLine(absX, absY + computedHeight, absX, absY, borderw, borderc)
+        );
+  }
+}
+      
+trait countChilds {
+  attributes {
+    var numChilds : int;
+  }
+  actions {
+    loop childs {
+      numChilds := fold 0 .. self$-.numChilds + 1;
+      childs.childNum := fold 0 .. childs$-.childNum + 1;
+    }
+  }
+}
+
+//some typical fully-handled box nodes
+interface Root { 
+  input w : int = 1500;
+  input h : int = 60000;
+}
+
+class Top : Root {
+  children { child : Node }
+  actions {
+    child.relX := 0;
+    child.relY := 0; 
+    child.canvas := paintStart(child.computedWidth, child.computedHeight);    
+    child.oldLineH := 0;
+    child.rightPadding := 0;
+    child.minX := (child.canvas?0:0);
+    child.minY := (child.canvas?0:0);
+    child.maxWidth := getPageWidth() - 15; //Clear Scroll Bar
+    child.totalHeightInit := 0;
+    child.childNum := 1;
+    child.inhColor := "black";
+    child.inhFontSize := "20px";
+    child.inhComputedWidth := child.maxWidth;
+    child.posX := 0;
+    child.posY := 0;
+    child.posWidth := child.inhComputedWidth;
+  }
+}
+
+trait WrappingLeaf{
+    actions{
+        relRightX := relX + computedWidth;
+        relRightY := relY;
+        firstChildWidth := computedWidth + rightPadding;
+        maxLineH := max(oldLineH, computedHeight) + relY;
+        totalHeightLast := totalHeightInit;
+    }
+}
+
+trait WrappingRoot{
+    actions{
+        loop childs{
+            childs.rightPadding := 0;
+            childs.relX := 0;
+            childs.relY := 0;
+            childs.oldLineH := 0;
+            childs.totalHeightInit := 0;
+        }
+    }
+}
+trait Wrapping {
+  children { childs : [ Node ]; }
+  actions {  
+    intrinsHeight := totalHeightLast + maxLineH;
+    loop childs {
+
+      childs.minX := minX;
+      childs.minY := minY;
+      childs.maxWidth := maxWidth;
+
+      firstChildWidth := fold
+        ml+pl ..
+        (childs$i.childNum == 1) ? childs$i.firstChildWidth + ml+mr+pl+pr : $-.firstChildWidth;
+
+      childs.rightPadding := fold 0 .. (childs$i.childNum == $$.numChilds) ? rightPadding + mr+pr : 0;
+
+      childs.relX := fold 0 .. 
+        ((childs$i.childNum == 1 ? relX : childs$-.relRightX + 5) + childs$i.firstChildWidth > maxWidth) ? 
+        0 :
+        (childs$i.childNum == 1 ? relX : childs$-.relRightX + 5);
+
+      childs.relY := fold 0 .. (childs$i.childNum == 1 ? relY : childs$-.relRightY) + (childs$i.relX == 0 ? 
+        (childs$i.childNum == 1 ? oldLineH : childs$-.maxLineH + 5) : 0);
+
+      childs.oldLineH := (childs$i.childNum == 1) ? oldLineH : ((childs$i.relX == 0) ? 0 : childs$-.maxLineH);
+
+      childs.totalHeightInit := ((childs$i.childNum == 1) ? totalHeightInit : childs$-.totalHeightLast) + (childs$i.relX == 0 ? (childs$i.childNum == 1 ? oldLineH : childs$-.maxLineH + 5) : 0);
+
+      relRightX := fold relX + intrinsPrefWidth .. childs$i.relRightX;
+      relRightY := fold relY .. childs$i.relRightY;
+      maxLineH := fold max(oldLineH, 0) .. childs$i.maxLineH;
+      totalHeightLast := fold totalHeightInit .. childs$i.totalHeightLast;
+
+      childs.canvas := fold render .. childs$-.canvas;      
+    }
+  }
+}
+
+
+class WrapBox(Wrapping,fontStyle,strokeBox,computeSelfHeight, relToMin, useInhWidth, shrinkToFitChilds, countChilds, posParent, intrinsicWidths) : Node {
+  actions{
+    loop childs{
+      intrinsPrefWidth := fold ($$.numChilds == 0 ? 0 : -5) + sumMarginsPadding .. self$-.intrinsPrefWidth + childs$i.intrinsPrefWidth + 5;
+      intrinsMinWidth := fold sumMarginsPadding .. max(self$-.intrinsMinWidth, sumMarginsPadding + childs$i.intrinsMinWidth);
+   }
+  }
+}
+
+class ListItem(fontStyle, relToMin, useInhWidth, computeSelfHeight, shrinkToFitChilds, countChilds, posParent, intrinsicWidths) : Node{
+  children { childs : [ Node ]; }
+  attributes{
+  }
+  actions{
+    render := canvas + paintRect(absX + 2, absY + 7, 3, 3, "blue");
+    intrinsHeight := totalHeightLast + maxLineH;
+    loop childs{
+      childs.minX := minX;
+      childs.minY := minY;
+      childs.maxWidth := maxWidth;
+
+      intrinsPrefWidth := fold ($$.numChilds == 0 ? 0 : -5) + sumMarginsPadding .. self$-.intrinsPrefWidth + childs$i.intrinsPrefWidth + 5;
+      intrinsMinWidth := fold sumMarginsPadding .. max(self$-.intrinsMinWidth, sumMarginsPadding + childs$i.intrinsMinWidth);
+
+      firstChildWidth := fold
+        ($$.numChilds == 0 ? 10 + ml+pl : 0) ..
+        (childs$i.childNum == 1) ? 10 + ml+pl +  childs$i.firstChildWidth : $-.firstChildWidth;
+
+      childs.rightPadding := fold 0 .. (childs$i.childNum == $$.numChilds) ? rightPadding + mr+pr : 0;
+
+      childs.relX := fold 0 .. 
+        ((childs$i.childNum == 1 ? (relX + 10) : childs$-.relRightX + 5) + childs$i.firstChildWidth > maxWidth) ? 
+        0 :
+        (childs$i.childNum == 1 ? (relX + 10) : childs$-.relRightX + 5);
+
+      childs.relY := fold 0 .. (childs$i.childNum == 1 ? relY : childs$-.relRightY) + (childs$i.relX == 0 ? 
+        (childs$i.childNum == 1 ? oldLineH : childs$-.maxLineH + 5) : 0);
+
+      childs.oldLineH := (childs$i.childNum == 1) ? max(oldLineH,10) : ((childs$i.relX == 0) ? 0 : childs$-.maxLineH);
+
+      childs.totalHeightInit := ((childs$i.childNum == 1) ? totalHeightInit : childs$-.totalHeightLast) + (childs$i.relX == 0 ? (childs$i.childNum == 1 ? oldLineH : childs$-.maxLineH + 5) : 0);
+
+      relRightX := fold relX + intrinsPrefWidth .. childs$i.relRightX;
+      relRightY := fold relY .. childs$i.relRightY;
+      maxLineH := fold max(oldLineH, 10) .. childs$i.maxLineH;
+      totalHeightLast := fold totalHeightInit .. childs$i.totalHeightLast;
+
+      childs.canvas := fold render .. childs$-.canvas;      
+    }
+  }
+}
+
+class Img(relToMin, WrappingLeaf) : Node{
+    attributes {
+        input imagehandle : int;
+    }
+    actions{
+        render := canvas + paintImg(absX,absY,imagehandle);
+        intrinsHeight := getImageHeight(imagehandle);
+        intrinsMinWidth := getImageWidth(imagehandle);
+        intrinsPrefWidth := getImageWidth(imagehandle);
+        computedWidth := getImageWidth(imagehandle);
+        computedHeight := intrinsHeight;
+        usedFontSize := inhFontSize;
+    }
+}
+
+//table stuff
+
+interface ColsI {
+  var intrinsPrefWidth : int;
+  var intrinsMinWidth : int;
+  
+
+  var colCount : int;
+  var availableWidth : int;
+  var absX : int;
+  var absY : int;
+  var canvas : int;
+  
+  var cellsReady : int;
+  var tableContentHeight : int;
+  var tableContentWidth : int;
+
+}
+
+interface RowI { 
+  var intrinsColCount : int;
+  var colCount : int;
+  var intrinsHeight : int;
+  var computedHeight : int;
+  var relY : int;
+  var absY : int;
+  var absX : int;
+  
+  var rowNum : int;
+  var cells : int;
+  var colAssignment : int;
+
+
+  var canvas : int;
+  var render : int;
+
+  var computedWidth : int;
+  var tableContentWidth : int;
+
+  var inhFontSize : string;
+  input intrinsFontSize : string;
+
+  var posX : int;
+  var posY : int;
+  var posWidth : int;
+
+  var inhColor : color;
+  input color : color = "none";
+  input bgc : color = "none";
+  input borderc : color = "none";
+  input borders : string = "none";
+  input borderw : int = 0;
+}
+/*
+class PositionedTableBox(positioned, posStrokeBox) : Node {
+  attributes {
+    var colCount : int;
+    var cellsReady : int;
+    var usedColor : int;
+    var usedFontSize : int;
+  }
+  children {
+    rows : [ RowI ];
+    columns : ColsI;
+  }
+  actions {
+    usedColor := validColor(color) ? color : inhColor;
+    usedFontSize := validFontSize(intrinsFontSize) ? getFontSize(intrinsFontSize,inhFontSize) : inhFontSize;
+
+    loop rows {
+      colCount := fold 0 .. max($-.colCount, rows$i.intrinsColCount);
+      rows.colCount := $$.colCount;
+      intrinsHeight := fold pmt+pmb+pt+pb .. $-.intrinsHeight + rows$i.computedHeight;
+      rows.relY := 0;
+      rows.absY := fold absY + pmt+pt .. rows$-.absY + (rows$i.rowNum == 1 ? 0 : rows$-.computedHeight);
+      rows.absX := absX + pl+pml;      
+      rows.colAssignment := 
+        fold 
+          emptyColumnList(colCount) 
+          .. 
+          columnsAppendRow(rows$-.colAssignment, rows$i.cells, rows$i.rowNum);
+      rows.rowNum := fold 0 .. rows$-.rowNum + 1;
+      rows.canvas := fold render .. rows$-.canvas;      
+      rows.tableContentWidth := columns.tableContentWidth;
+
+      rows.inhColor := usedColor;
+      rows.inhFontSize := usedFontSize;
+
+      rows.posX := absX + pml;
+      rows.posY := absY + pmt;
+      rows.posWidth := posComputedWidth - pml - pmr;
+
+    }
+    cellsReady := rows$$.colAssignment;
+
+    posPrefWidth := columns.intrinsPrefWidth + pml+pmr+pl+pr;
+    posMinWidth := columns.intrinsMinWidth + pml+pmr+pl+pr;
+    columns.colCount := colCount;
+    columns.cellsReady := cellsReady ? true : true;
+    columns.availableWidth := posComputedWidth - pml - pmr - pl - pr;
+    columns.absX := absX + pl+pml;
+    columns.absY := absY + pl+pml;
+    columns.canvas := render;
+    columns.tableContentHeight := intrinsHeight;
+  }
+}
+*/
+class TableBox(computeSelfHeight, WrappingLeaf, relToMin, strokeBox, intrinsicWidths) : Node {
+  attributes {
+    var colCount : int;
+    var cellsReady : int;
+    var usedColor : int;
+  }
+  children {
+    rows : [ RowI ];
+    columns : ColsI;
+  }
+  actions {
+    usedColor := validColor(color) ? color : inhColor;
+    usedFontSize := validFontSize(intrinsFontSize) ? getFontSize(intrinsFontSize,inhFontSize) : inhFontSize;
+
+    computedWidth := (getWidth(width,0) == "auto" ? min(intrinsPrefWidth, inhComputedWidth) : inhComputedWidth);
+
+    loop rows {
+      colCount := fold 0 .. max($-.colCount, rows$i.intrinsColCount);
+      rows.colCount := $$.colCount;
+      intrinsHeight := fold mt+mb+pt+pb .. $-.intrinsHeight + rows$i.computedHeight;
+      rows.relY := 0;
+      rows.absY := fold absY + mt+pt .. rows$-.absY + (rows$i.rowNum == 1 ? 0 : rows$-.computedHeight);
+      rows.absX := absX + ml+pl;      
+      rows.colAssignment := 
+        fold 
+          emptyColumnList(colCount) 
+          .. 
+          columnsAppendRow(rows$-.colAssignment, rows$i.cells, rows$i.rowNum);
+      rows.rowNum := fold 0 .. rows$-.rowNum + 1;
+      rows.canvas := fold render .. rows$-.canvas;      
+      rows.tableContentWidth := columns.tableContentWidth;
+
+      rows.inhColor := usedColor;
+      rows.inhFontSize := usedFontSize;
+
+      rows.posX := (position == "static" ? posX : absX + ml);
+      rows.posY := (position == "static" ? posY : absY + mt);
+      rows.posWidth := (position == "static" ? posWidth : computedWidth - ml - mr);   
+
+    }   
+    cellsReady := rows$$.colAssignment;
+
+    intrinsPrefWidth := selfIntrinsWidth == 0 ? (columns.intrinsPrefWidth + sumMarginsPadding) : selfIntrinsWidth;
+    intrinsMinWidth := selfIntrinsWidth == 0 ? (columns.intrinsMinWidth + sumMarginsPadding) : selfIntrinsWidth;
+    columns.colCount := colCount;
+    columns.cellsReady := cellsReady ? true : true;
+    columns.availableWidth := computedWidth - ml - mr - pl - pr;
+    columns.absX := absX + ml;
+    columns.absY := absY + mt;
+    columns.canvas := render;
+    columns.tableContentHeight := intrinsHeight;
+  }
+}
+interface CellI {
+
+    input colSpan : ?int;
+    input rowSpan : ?int;
+    
+    input left : string = "auto";
+    input right : string = "auto";
+    input top : string = "auto";
+
+    //Node
+    var canvas : int;
+    var render : int;
+    var intrinsHeight : int;
+    var computedHeight : int;
+    var relX : int;
+    var relRightX : int;
+    var absX : int;
+    var relY : int;
+    var relRightY : int;
+    var absY : int;  
+    var totalHeightInit : int;
+    var totalHeightLast : int;
+
+    var minX : int;
+    var minY : int;
+    var firstChildWidth : int;
+    var rightPadding : int;
+    
+    input position : string = "static";
+    var posX : int;
+    var posY : int;
+    var posWidth : int;
+
+    var inhFontSize : string;
+    input intrinsFontSize : string;
+    var usedFontSize : string;
+
+    var inhColor : color;
+    input color : color = "none";
+    input bgc : color = "none";
+    input borderc : color = "none";
+    input borders : string = "none";
+    input borderw : int = 0;
+
+    input width : string = "auto";
+    var intrinsPrefWidth : int;
+    var intrinsMinWidth : int;
+    var computedWidth : int;
+    var maxWidth : int;
+
+    var oldLineH : int;
+    var maxLineH : int;
+    var childNum : int;
+    
+    input marginTop : string = 0;
+    input marginBottom : string = 0;
+    input marginLeft : string = 0;
+    input marginRight : string = 0;
+    var mt : int;
+    var mb : int;
+    var ml : int;
+    var mr : int;
+    input paddingTop : string = 0;
+    input paddingBottom : string = 0;
+    input paddingLeft : string = 0;
+    input paddingRight : string = 0;
+    var pt : int;
+    var pb : int;
+    var pl : int;
+    var pr : int;
+ 
+    var cellNum : int;
+    var column : int;
+    var row : int;
+}
+
+class WrappingCell(Wrapping, relToMin,fontStyle, shrinkToFitChilds, countChilds, posParent, intrinsicWidths) : CellI {
+  attributes { 
+  }
+  actions{
+    render := canvas;
+    loop childs{
+      intrinsPrefWidth := fold ($$.numChilds == 0 ? 0 : -5) + sumMarginsPadding .. self$-.intrinsPrefWidth + childs$i.intrinsPrefWidth + 5;
+      intrinsMinWidth := fold sumMarginsPadding .. max(self$-.intrinsMinWidth, sumMarginsPadding + childs$i.intrinsMinWidth);
+    }
+  }
+
+}
+/*
+class StackingCell(WrappingLeaf, WrappingRoot,fontStyle, blockWidthChilds, relToMin, strokeBox, countChilds, posParent, intrinsicWidths) : CellI {
+  children { childs : [ Node ]; }  
+  actions {
+    loop childs {
+      intrinsHeight := fold ($$.numChilds == 0 ? 0 : -10) + mt+mb+pt+pb .. $-.intrinsHeight + childs$i.computedHeight;
+      intrinsMinWidth := fold selfIntrinsWidth + sumMarginsPadding .. max(self$-.intrinsMinWidth, sumMarginsPadding + childs$i.intrinsMinWidth);
+      intrinsPrefWidth := fold selfIntrinsWidth + sumMarginsPadding .. selfIntrinsWidth == 0 ? max($-.intrinsPrefWidth, sumMarginsPadding + childs$i.intrinsPrefWidth) : $-.intrinsPrefWidth;
+
+      childs.minX := absX + ml+pl;
+      childs.minY := fold absY + mt+pt .. childs$-.minY + (childs$i.childNum == 1 ? 0 : (childs$-.computedHeight));
+      childs.canvas := fold render .. childs$-.canvas;
+      childs.maxWidth := computedWidth - ml - mr - pl - pr; 
+    }
+  }
+}*/
+
+class Row(computeSelfHeight, fontStyle) : RowI {
+  attributes {
+    var usedFontSize : string;
+  }
+  children {
+    childs : [ CellI ];
+  }
+  phantom { //do not emit code for these
+    childs.relX;
+    childs.minX;
+    childs.canvas;
+    childs.childNum;
+    childs.maxWidth;
+    childs.oldLineH;
+    childs.rightPadding;
+    childs.totalHeightInit;
+    childs.computedWidth;
+  }
+  actions {
+    loop childs {
+      intrinsColCount := 
+        fold 0 .. $-.intrinsColCount + (isEmptyInt(childs$i.colSpan) ? 1 : valueInt(childs$i.colSpan));
+      intrinsHeight := 
+        fold 10
+        .. 
+        (isEmptyInt(childs$i.rowSpan) || valueInt(childs$i.rowSpan) == 1) ?
+        max($-.intrinsHeight, childs$i.intrinsHeight)
+        : $-.intrinsHeight;
+
+      childs.relY := 0;
+      childs.minY := absY;
+    
+
+      childs.canvas := fold render .. childs$-.canvas;
+      childs.computedHeight := computedHeight;
+
+      childs.posX := posX;
+      childs.posY := posY;
+      childs.posWidth := posWidth;
+
+      childs.pt := getLength(childs$i.paddingTop,childs$i.usedFontSize,childs$i.maxWidth); 
+      childs.pb := getLength(childs$i.paddingBottom,childs$i.usedFontSize,childs$i.maxWidth); 
+      childs.pl := getLength(childs$i.paddingLeft,childs$i.usedFontSize,childs$i.maxWidth); 
+      childs.pr := getLength(childs$i.paddingRight,childs$i.usedFontSize,childs$i.maxWidth); 
+
+      childs.mb := 0;
+      childs.mt := 0;
+      childs.ml := 0;
+      childs.mr := 0;
+    }    
+
+    loop childs {
+      computedWidth := fold 0 .. $-.computedWidth + childs$i.intrinsMinWidth;  //Is this right????
+    }
+    
+    loop childs {
+      cells := 
+        fold 
+          mtIntPairList() 
+          .. 
+          appendIntPairList(
+            $-.cells, 
+            pairInt(
+              isEmptyInt(childs$i.rowSpan) ? 1 : valueInt(childs$i.rowSpan),
+              isEmptyInt(childs$i.colSpan) ? 1 : valueInt(childs$i.colSpan)));
+      childs.column := columnsGetCol(colAssignment, childs.cellNum);
+      childs.row := rowNum;
+      childs.cellNum := fold 0 .. childs$-.cellNum + 1;
+    }
+
+    render := 
+      canvas + (validColor(bgc) ? paintRect(absX,absY,computedWidth,computedHeight,bgc) : 0) + 
+        (borders != "solid" ? 0 :  
+            paintLine(absX,absY, absX+computedWidth,absY, borderw,borderc) +
+            paintLine(absX + computedWidth, absY, absX + computedWidth, absY + computedHeight, borderw, borderc) + 
+            paintLine(absX + computedWidth, absY + computedHeight, absX, absY + computedHeight, borderw, borderc) +
+            paintLine(absX, absY + computedHeight, absX, absY, borderw, borderc)
+        );
+
+ }
+}
+
+
+interface ColI { 
+  var colCount : int;
+  var colNum : int;
+  var numChilds : int;
+  
+  var intrinsMinWidth : int;
+  var intrinsPrefWidth : int;
+  var intrinsPercentWidth : int;
+  var computedWidth : int;
+
+  var lowerBound : int;
+  var upperBound : int;
+  var minPercentGuess : int;
+  var prefGuess : int;
+  
+  var intrinsHeight : int;
+  var computedHeight : int;
+
+
+  var relRightX : int;
+  var relX : int;
+  var relY : int;
+  var absX : int;
+  var absY : int;
+  var canvas : int;
+  var render : int;
+ 
+
+  var cellsReady : int;
+  var tableContentHeight : int;
+  
+}
+
+
+class Col : ColI {
+
+  phantom {
+    childs.column;
+    childs.row;
+    childs.cellNum;
+    childs.relY;
+    childs.minY;
+    childs.computedHeight;
+    childs.posX;
+    childs.posY;
+    childs.posWidth;
+    childs.mt;
+    childs.mb;
+    childs.mr;
+    childs.ml;
+  }  
+  children {
+    childs : [ CellI ]; //  ../rows/childs[.column == self.colNum]
+  }
+
+
+  actions {
+    computedHeight := intrinsHeight;
+    loop childs {
+      childs.childNum := fold (cellsReady?0:0) .. childs$-.childNum + 1;
+      numChilds := fold (cellsReady?0:0) .. $-.numChilds + 1;
+      intrinsMinWidth := 
+        fold 
+          (cellsReady?0:0)
+          .. 
+          (isEmptyInt(childs$i.colSpan) || valueInt(childs$i.colSpan) == 1) ?
+              max($-.intrinsMinWidth,  childs$i.intrinsMinWidth)
+            : $-.intrinsMinWidth;
+      intrinsPrefWidth := 
+        fold 
+          (cellsReady?0:0)
+          .. 
+          (isEmptyInt(childs$i.colSpan) || valueInt(childs$i.colSpan) == 1) ?
+              max($-.intrinsPrefWidth, childs$i.intrinsPrefWidth)
+            : $-.intrinsPrefWidth;            
+
+      intrinsPercentWidth := fold (cellsReady?0:0) .. max((getPercent(childs$i.width) ? getPercent(childs$i.width) : 0), $-.intrinsPercentWidth);
+      intrinsHeight := fold (cellsReady?0:0) + 0 .. $-.intrinsHeight + childs$i.computedHeight;
+      childs.maxWidth := computedWidth + (cellsReady?0:0);
+      childs.computedWidth := computedWidth + (cellsReady?0:0);
+
+      childs.relX := (cellsReady?0:0);
+      childs.minX := absX + (cellsReady?0:0);
+      childs.oldLineH := (cellsReady?0:0);
+      childs.rightPadding := (cellsReady?0:0);
+      childs.totalHeightInit := (cellsReady?0:0);
+
+      childs.canvas := fold render + (cellsReady?0:0) .. childs$-.canvas;      
+    }      
+    
+    render := canvas;
+
+
+  }
+}
+
+
+
+class Cols : ColsI {
+  attributes {
+     var k : int;
+     var widthSelect : int;
+     var minPercentGuess : int;
+     var prefGuess : int;
+
+     var guessBelow : int;
+     var guessAbove : int;
+  }
+  children {
+    cols : [ ColI ];
+  }
+  actions {
+    //do not know until colCount, put in dep
+    k := (guessBelow != guessAbove) ? (guessAbove - availableWidth)/(guessAbove - guessBelow) : 1;
+
+    widthSelect := (intrinsMinWidth < availableWidth && minPercentGuess >= availableWidth) ? 0 : (
+        (minPercentGuess < availableWidth && prefGuess >= availableWidth) ? 1 : -1);
+
+    guessBelow := (widthSelect == 0 ? intrinsMinWidth : (widthSelect == 1 ? minPercentGuess : Error("Error: bad widthSelect")));
+    guessAbove := (widthSelect == 0 ? minPercentGuess : (widthSelect == 1 ? prefGuess : Error("Error: bad widthSelect")));
+
+
+    loop cols {
+      cols.minPercentGuess := (cols$i.intrinsPercentWidth > 0) ? max((cols$i.intrinsPercentWidth * availableWidth), cols$i.intrinsMinWidth) : cols$i.intrinsMinWidth;
+      cols.prefGuess := (cols$i.intrinsPercentWidth > 0) ? max((cols$i.intrinsPercentWidth * availableWidth), cols$i.intrinsMinWidth) : cols$i.intrinsPrefWidth;
+
+      cols.colCount := colCount;
+
+      minPercentGuess := fold (cellsReady?0:0) .. $-.minPercentGuess + cols$i.minPercentGuess;
+      prefGuess := fold (cellsReady?0:0) .. $-.prefGuess + cols$i.prefGuess;
+
+      cols.lowerBound := (widthSelect == 0 ? cols$i.intrinsMinWidth : (widthSelect == 1 ? cols$i.minPercentGuess : Error("Error: bad widthSelect")));
+      cols.upperBound := (widthSelect == 0 ? cols$i.minPercentGuess : (widthSelect == 1 ? cols$i.prefGuess : Error("Error: bad widthSelect")));
+
+      intrinsPrefWidth := 
+        fold 
+          (cellsReady?0:0)
+          ..
+          $-.intrinsPrefWidth + cols$i.intrinsPrefWidth;            
+      intrinsMinWidth := 
+        fold 
+          (cellsReady?0:0)
+          ..
+          $-.intrinsMinWidth + cols$i.intrinsMinWidth;
+      cols.colNum := fold 0 + (cellsReady?0:0) .. cols$-.colNum + 1;
+
+      cols.computedWidth := (cellsReady?0:0) + (prefGuess < availableWidth ? Error("TODO: implement full tables algorithm") : 0) + (
+        (k < 0) ? cols$i.upperBound :  (
+        (0 <= k && k <= 1) ? (k * cols$i.lowerBound + (1-k) * cols$i.upperBound) : (
+        (k > 1) ? cols$i.lowerBound : Error("Logic Error")))); 
+
+      cols.relRightX := fold 0 + (cellsReady?0:0) .. cols$-.relRightX + cols$i.computedWidth;
+      cols.relX := fold 0 .. cols$i.relRightX - cols$i.computedWidth;
+      cols.absX := absX + cols$i.relX;           
+
+      cols.relY := (cellsReady?0:0);
+      cols.absY := absY + cols$i.relY;
+      cols.canvas := fold canvas + (cellsReady?0:0) .. cols$-.canvas;                        
+      cols.cellsReady := cellsReady;
+      cols.tableContentHeight := tableContentHeight;
+      tableContentWidth := fold 0 .. $-.tableContentWidth + cols$i.computedWidth;
+    }
+  }
+}
+
+class PositionedVBox(WrappingRoot, fontStyle, blockWidthChilds, posStrokeBox, countChilds, positioned) : Node{
+  children { childs : [ Node ]; }  
+
+  actions {
+    loop childs {
+      intrinsHeight := fold ($$.numChilds == 0 ? 0 : -10) + mt+mb+pt+pb .. $-.intrinsHeight + childs$i.computedHeight;
+      posMinWidth := fold (getWidth(width, 0) == "auto" ? pml+pmr+pl+pr : getWidth(width, 0)) .. max(self$-.posMinWidth, pml+pmr+pl+pr + childs$i.intrinsMinWidth);
+      posPrefWidth := fold pml+pmr+pl+pr .. max($-.posPrefWidth, pml+pmr+pl+pr + childs$i.intrinsPrefWidth);
+
+      childs.minX := absX + ml+pl;
+      childs.minY := fold absY + mt+pt .. childs$-.minY + (childs$i.childNum == 1 ? 0 : (childs$-.computedHeight + 10));
+      childs.canvas := fold render .. childs$-.canvas;        
+      childs.maxWidth := posComputedWidth - ml - mr - pl - pr; 
+
+      childs.posX := absX + ml;
+      childs.posY := absY + mt;
+      childs.posWidth := posComputedWidth - ml - mr;
+    }
+  }
+}
+
+class VBox(WrappingLeaf, WrappingRoot, fontStyle, computeSelfHeight, useInhWidth, blockWidthChilds, relToMin, strokeBox, countChilds, posParent, intrinsicWidths) : Node {
+  children { childs : [ Node ]; }  
+
+  actions {
+    loop childs {
+      intrinsHeight := fold ($$.numChilds == 0 ? 0 : -10) + mt+mb+pt+pb .. $-.intrinsHeight + childs$i.computedHeight;
+      intrinsMinWidth := fold selfIntrinsWidth + sumMarginsPadding .. max(self$-.intrinsMinWidth, sumMarginsPadding + childs$i.intrinsMinWidth);
+      intrinsPrefWidth := fold selfIntrinsWidth + sumMarginsPadding .. selfIntrinsWidth == 0 ? max($-.intrinsPrefWidth, sumMarginsPadding + childs$i.intrinsPrefWidth) : $-.intrinsPrefWidth;
+
+      childs.minX := absX + ml+pl;
+      childs.minY := fold absY + mt+pt .. childs$-.minY + (childs$i.childNum == 1 ? 0 : (childs$-.computedHeight + 10));
+      childs.canvas := fold render .. childs$-.canvas;        
+      childs.maxWidth := computedWidth - ml - mr - pl - pr; 
+    }
+  }
+}
+
+class TextBox(useInhWidth, relToMin, computeSelfHeight) : Node { 
+  attributes {  
+    input text : string;
+    input fontFamily : string = "Arial";
+    var lineHeight : int;
+    var lineSpacing : int;
+    var numberLines : int;  
+    var overflow : bool;
+    var renderFontSize : int;
+    var renderColor : color; 
+    
+    var splitText : int;
+    var metrics : int;
+
+  }
+  actions {   
+    metrics := 0;
+  
+    renderFontSize := validFontSize(intrinsFontSize) ? getFontSize(intrinsFontSize,inhFontSize) : inhFontSize;
+    renderColor := validColor(color) ? color : inhColor; 
+    usedFontSize := renderFontSize;
+
+
+    overflow := false;
+    lineSpacing := 5;
+    render := canvas + paintParagraph(splitText, fontFamily, renderFontSize, minX, minY, relX, relY, maxWidth, false, lineHeight, renderColor, lineSpacing);
+
+    splitText := splitText(relX,maxWidth,text,fontFamily,renderFontSize);
+
+    relRightX := (numberLines == 1) ? (relX + intrinsPrefWidth) : getLeftoverWidth(splitText);
+    relRightY := (numberLines - 1) * (lineHeight + lineSpacing) + relY;
+    maxLineH := max(oldLineH, lineHeight);
+    totalHeightLast := (numberLines - 1) * (lineHeight + lineSpacing) + totalHeightInit;
+
+    lineHeight := getLineHeight(text, fontFamily, renderFontSize, metrics);
+    intrinsPrefWidth := getSumWordW(text, fontFamily, renderFontSize, metrics);
+    intrinsMinWidth := getMaxWordW(text, fontFamily, renderFontSize, metrics);
+    firstChildWidth := getFirstWordW(text,fontFamily,renderFontSize);
+    numberLines := getNumberLines(splitText);
+    intrinsHeight := numberLines * (lineHeight + lineSpacing) - lineSpacing;
+  }
+}

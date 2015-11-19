@@ -1,0 +1,74 @@
+<html><head><title>html5 backend: everything</title>
+<script>
+state = undefined;
+</script>
+<script src="tablesideal.helper.js"></script>
+<script src="tablesideal.js"></script>
+<script src="render.js"></script>
+<script src="jquery-1.6.1.js"></script>
+<script>
+logger = {log: function () {}, group: function (){}, groupEnd: function(){}, error: function() {} };
+
+window.addEventListener("load", function () {
+    $("#htmlSrc")[0].innerHTML 
+      = $("#contents")[0].innerHTML.replace(/</g,"&lt;").replace(/>/g,"&gt");
+  }, false);
+</script>
+</head>
+<body>
+<h2>Node types:</h2>
+<ul>
+  <li style="border: 1px black solid; margin: 10px; padding: 5px">Black: &lt;Leaf&gt;</li>
+</ul>
+<h2>Output: </h2>
+<div><canvas id="canvas"/></div>
+<contents id="contents">
+<Top>
+  <WrapBox refName="child" width="400">
+    <Leaf refName="childs"></Leaf>  
+    <Leaf refName="childs"></Leaf>  
+    <TableBox refName="childs" width="300">
+      <Row refName="rows">
+        <Cell refName="childs">
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+        </Cell>           
+        <Cell refName="childs">
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+        </Cell>           
+      </Row>
+      <Row refName="rows">
+        <Cell refName="childs">
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+        </Cell>           
+        <Cell refName="childs">
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+        </Cell>           
+      </Row>
+      <Row refName="rows">
+        <Cell refName="childs">
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+        </Cell>           
+        <Cell refName="childs">
+          <Leaf refName="childs"></Leaf>  
+          <Leaf refName="childs"></Leaf>  
+        </Cell>           
+      </Row>          
+    </TableBox>
+    <Leaf refName="childs"></Leaf>  
+    <Leaf refName="childs"></Leaf>  
+  </WrapBox>
+</Top>
+</contents>
+<h2>HTML source</h2>
+<pre id="htmlSrc">
+asdf
+</pre>
+<h2>Widget sources</h2>
+<iframe src="tablesideal.ftl" style="width: 80em;  height: 100%; scroll: overflow"></iframe>
+</body>
+</html>

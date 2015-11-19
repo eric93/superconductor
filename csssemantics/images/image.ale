@@ -1,0 +1,50 @@
+type BorderStyle = solid | none;
+
+interface Box{
+        var composite : int;
+        var canvas : int;
+        var width : int;
+        var height : int;
+}
+
+class Root : Box{
+    attributes{
+    }
+    children{ child : Box;} 
+    actions{
+        width := child.width;
+        height := child.height;
+        canvas := 0;
+        child.canvas := paintStart(width, height, canvas);
+        composite := paintDone(child.composite );
+    }
+}
+class Img : Box{
+    attributes{
+        input padding : int = 0;
+        input margin : int = 0;
+        input borderwidth: int = 0;
+        input borderstyle: BorderStyle = none;
+        input bordercolor: color;
+        input imagehandle: int;
+        var x : int;
+        var y : int;
+        var w : int;
+        var h : int;
+
+        var composite : int;
+    }
+    actions{
+        w := width;
+        h := height;
+        x := margin + padding + borderwidth; 
+        y := margin + padding + borderwidth;
+        width := 2*margin + 2*padding + 2*borderwidth + getImageWidth(imagehandle);
+        height := 2*margin + 2*padding + 2*borderwidth + getImageHeight(imagehandle);
+        composite := paintImg(imagehandle, x, y) + 
+                     paintRect(margin,margin,width - 2*margin, borderwidth,bordercolor) + 
+                     paintRect(margin, margin, borderwidth, height - 2*margin, bordercolor) + 
+                     paintRect(width - margin, margin, borderwidth, height - 2*margin, bordercolor) + 
+                     paintRect(margin, height - margin, width - 2*margin, borderwidth, bordercolor) + canvas;
+    }
+}

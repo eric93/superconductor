@@ -1,0 +1,43 @@
+<html>
+    <head>
+        <script type = "text/javascript" src = "rendering/render.js"></script>
+        <script type = "text/javascript" src = "rendering/runSelectors.js"></script>
+        <script type = "text/javascript" src = "rendering/DOMToRender.js"></script>
+        <script type = "text/javascript" src = "rendering/nestedWrap.js"></script>
+        <script type = "text/javascript" src = "rendering/sizzle.js"></script>
+        <script type = "text/javascript">
+            function max (a,b){
+                return a > b ? a : b;
+            }
+            function min (a,b){
+                return a < b ? a : b;
+            }
+        </script>
+        <style type = "text">
+            * {display: inline;}
+            #contents {maxwidth: 135;}
+        </style>
+    </head>
+
+    <body>
+        <canvas id = "canvas">
+            <contents id = "contents" style = "">
+                <wrapbox>
+                    <wrapbox>
+                    <leaf style = "width: 50; height: 10"></leaf>
+                    <leaf style = "height: 10; width: 10"></leaf>
+                    </wrapbox>
+                    <leaf style = "height: 10; width: 10"></leaf>
+                    <wrapbox>
+                    <leaf style = "width: 20; height: 20"></leaf>
+                    <wrapbox></wrapbox>
+                    <wrapbox>
+                    <leaf style = "width: 10; height: 10"></leaf>
+                    <leaf style = "width: 50; height: 10"></leaf>
+                    </wrapbox>
+                    </wrapbox>
+                </wrapbox>
+            </contents>
+        </canvas>
+    </body>
+</html>

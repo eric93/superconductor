@@ -1,0 +1,26 @@
+<html>
+  <head>
+    <title>overlapping rowspan / colspan error</title>
+    <style>
+    col { background-color: #777; }
+    </style>
+  </head>
+  <body>
+    <table border="2">
+      <tr><td>r1c1</td><td rowspan="2">r1c2 (rowspan = 2)</td></tr>
+      <tr><td colspan="2">r2c1 (colspan = 2)</td></tr>      
+    </table>
+    <p>Input: 2x2 table except one cell specifies an extra row and another an extra (overlapping) column. </p>
+    
+    <p>Expectation: undefined</p>
+    <p>Spec: not in CSS 2.1 (?) but in HTML4 tables. Calculate # cols based on biggest row (in isolation, looking at colspans in that row), giving 3. However, it would have to be added to the beginning of row 2, but this is only allowed at the end.</p>
+    
+    <ul>
+      <li>Chrome: 2x2 with overlap</li>
+      <li>Firefox: 2x2 with overlap</li>
+      <li>Opera: 2x2 with overlap</li>
+    </ul>
+    
+    
+  </body>
+</html>  

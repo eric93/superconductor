@@ -1,0 +1,46 @@
+CSS Box Model:
+width
+height
+max-width
+min-width
+min-height
+border
+margin
+padding
+(for all above top, bottom, left, right)
+border-collapse
+box-shadow
+overflow
+
+Tables:
+no colspan or rowspan
+
+Text:
+color
+text-align
+text-decoration
+vertical-align
+white-space
+word-spacing
+line-height
+
+Background:
+background
+background-color
+background-image
+background-repeat
+
+
+Font:
+font-size
+font-weight
+font-style
+
+Other:
+position
+float & clear
+list-style
+counter-increment
+target
+
+

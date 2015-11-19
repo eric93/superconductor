@@ -1,0 +1,29 @@
+<html>
+  <head>
+    <title>rowspan</title>
+    <style>
+    td { }
+    col { background-color: #777; }
+    </style>
+  </head>
+  <body>
+    <table border="2">
+      <tr bgcolor="#777"><td>r1c1</td><td rowspan="3">r1c2 (rowspan = 3)</td><td rowspan="2">r1c3 (rowspan = 2)</td></tr>
+      <tr bgcolor="#ccc"><td>r2c1</td></tr>      
+      <tr bgcolor="pink"><td>r3c1</td><td>r3c2</td></tr>
+      <tr><td>r4c1</td><td>r4c2</td><td>r4c3</td></tr>
+    </table>
+    <p>Input: 4x3 table where second and third row cells rearrange around first row's multi-row cells. Each row has a different color.</p>
+    
+    <p>Expectation: 3x3, where second and third row cells rearrange around first row cells (that span multicolumns). </p>
+    <p>Spec: matches expectation</p>
+    
+    <ul>
+      <li>Chrome: 4x3</li>
+      <li>Firefox: 4x3</li>
+      <li>Opera: 4x3</li>
+    </ul>
+    
+    
+  </body>
+</html>  
