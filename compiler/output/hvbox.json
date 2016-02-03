@@ -1,0 +1,36 @@
+  {
+    "interfaces": {
+      "top": {
+          "vars": [],
+          "inputs": ["a", "display", "refname"]
+        },
+      "hvbox": {
+          "vars": ["height", "width", "bottom", "right"],
+          "inputs": ["visible", "display", "refname"]
+        }
+    },
+    "traits": {
+},
+    "classes": {
+      "root": {
+          "interface": "top",
+          "vars": [],
+          "inputs": []
+        },
+      "hbox": {
+          "interface": "hvbox",
+          "vars": ["childswidth", "childsheight"],
+          "inputs": []
+        },
+      "vbox": {
+          "interface": "hvbox",
+          "vars": ["childswidth", "childsheight"],
+          "inputs": []
+        },
+      "leaf": {
+          "interface": "hvbox",
+          "vars": [],
+          "inputs": ["height_in", "width_in"]
+        }
+    }
+  }

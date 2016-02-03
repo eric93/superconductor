@@ -1,0 +1,36 @@
+  {
+    "interfaces": {
+      "top": {
+          "vars": [],
+          "inputs": ["a", "display", "refname", "a_delta"]
+        },
+      "hvbox": {
+          "vars": ["width_delta", "bottom_delta_0", "height", "right_delta", "width_delta_0", "bottom_delta", "right_delta_0", "width", "bottom", "height_delta", "height_delta_0", "right"],
+          "inputs": ["width_old_0", "visible", "bottom_old_0", "height_old", "width_old", "display", "refname", "right_old_0", "visible_delta", "bottom_old", "right_old", "height_old_0"]
+        }
+    },
+    "traits": {
+},
+    "classes": {
+      "root": {
+          "interface": "top",
+          "vars": [],
+          "inputs": []
+        },
+      "hbox": {
+          "interface": "hvbox",
+          "vars": ["childswidth_delta", "childsheight_delta", "childsheight_delta_0", "childswidth_delta_0", "childswidth", "childsheight"],
+          "inputs": ["childswidth_old", "childsheight_old_0", "childswidth_old_0", "childsheight_old"]
+        },
+      "vbox": {
+          "interface": "hvbox",
+          "vars": ["childswidth_delta", "childsheight_delta", "childsheight_delta_0", "childswidth_delta_0", "childswidth", "childsheight"],
+          "inputs": ["childswidth_old", "childsheight_old_0", "childswidth_old_0", "childsheight_old"]
+        },
+      "leaf": {
+          "interface": "hvbox",
+          "vars": [],
+          "inputs": ["height_in_delta", "height_in", "width_in", "width_in_delta"]
+        }
+    }
+  }
