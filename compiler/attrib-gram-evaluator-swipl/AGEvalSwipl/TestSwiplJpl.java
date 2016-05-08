@@ -1,28 +1,28 @@
 package AGEvalSwipl;
 
-import java.util.Hashtable;
+import java.util.Map;
 
-import jpl.Compound;
-import jpl.Query;
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Compound;
+import org.jpl7.Query;
+import org.jpl7.Term;
+import org.jpl7.Variable;
 
 public class TestSwiplJpl {
 	
 	public static boolean testExternalCallAst () {
 		Variable N = new Variable("N");
-		jpl.Integer One = new jpl.Integer(1);
-		jpl.Integer Thirteen = new jpl.Integer(13);
+		org.jpl7.Integer One = new org.jpl7.Integer(1);
+		org.jpl7.Integer Thirteen = new org.jpl7.Integer(13);
 		Query q = new Query(
 				new Compound(";", new Term[]{
 						new Compound("succ", new Term[] { Thirteen, N}),
 						new Compound("succ", new Term[] { One, N})}));
 						
 		int sum = 0;
-		while (q.hasMoreSolutions()) {
+		while (q.hasNext()) {
 			@SuppressWarnings("unchecked")
-			Hashtable<Variable, Term> binding = (Hashtable<Variable, Term>) q.nextSolution();
-			sum += ((jpl.Integer) binding.get("N")).intValue();
+			Map<String, Term> binding = q.next();
+			sum += ((org.jpl7.Integer) binding.get("N")).intValue();
 		}		
 		return sum == (14 + 2);
 	}
@@ -30,10 +30,10 @@ public class TestSwiplJpl {
 	public static boolean testExternalCallString () {
 		Query q = new Query("succ(13, N) ; succ(1, N)");
 		int sum = 0;
-		while (q.hasMoreElements()) {
+		while (q.hasNext()) {
 			@SuppressWarnings("unchecked")
-			Hashtable<Variable, Term> binding = (Hashtable<Variable, Term>) q.nextElement();
-			sum += ((jpl.Integer) binding.get("N")).intValue();
+			Map<String, Term> binding = q.next();
+			sum += ((org.jpl7.Integer) binding.get("N")).intValue();
 		}		
 		return sum == (14 + 2);
 	}

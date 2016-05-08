@@ -4,14 +4,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Vector;
 
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Term;
 
 import aleGrammar.ALEParser;
 import aleGrammar.ALEParser.ExtendedVertex;
@@ -874,7 +873,7 @@ public static String printCurrentPipelineDelayedBatch (Schedule schedule2) throw
 	return res;
 }
 
-public String printCurrentPipelineHeaders (Hashtable<Variable, Term> binding) throws InvalidGrammarException {
+public String printCurrentPipelineHeaders (Map<String, Term> binding) throws InvalidGrammarException {
 	String res = "";
 	int pass = 0;
 	int lockC = 0;
@@ -953,7 +952,7 @@ public String printCurrentPipelineHeaders (Hashtable<Variable, Term> binding) th
 	return res;		
 }
 
-public String printCurrentPipelineBuild (Hashtable<Variable, Term> binding) throws InvalidGrammarException {
+public String printCurrentPipelineBuild (Map<String, Term> binding) throws InvalidGrammarException {
 	String res = "";
 	int pass = 0;
 	int lockC = 0;
@@ -1032,7 +1031,7 @@ public String printCurrentPipelineBuild (Hashtable<Variable, Term> binding) thro
 	return res;
 }
 
-public String printCurrentPipelineDelayedBuild (Hashtable<Variable, Term> binding) throws InvalidGrammarException {
+public String printCurrentPipelineDelayedBuild (Map<String, Term> binding) throws InvalidGrammarException {
 	String res = "";
 	int pass = 0;
 	int lockC = 0;
@@ -1520,7 +1519,7 @@ public static void main(String[] args) throws Exception {
 }
 
 public String output(String baseName, String visitOut, String visitDispatches, String outputDir, boolean write,
-		boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Hashtable<Variable, Term> binding, AGEvaluator aleg)
+		boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Map<String, Term> binding, AGEvaluator aleg)
 		throws IOException, InvalidGrammarException {
 
 	if (write) {

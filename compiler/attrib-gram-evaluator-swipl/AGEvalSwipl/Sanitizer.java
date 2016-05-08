@@ -11,10 +11,10 @@ import aleGrammar.AleFrontend;
 
 import AGEval.InvalidGrammarException;
 
-import jpl.Atom;
-import jpl.Compound;
-import jpl.Query;
-import jpl.Term;
+import org.jpl7.Atom;
+import org.jpl7.Compound;
+import org.jpl7.Query;
+import org.jpl7.Term;
 
 public class Sanitizer {
 	public boolean anyFailed = false;

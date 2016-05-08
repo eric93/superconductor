@@ -4,14 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Map.Entry;
 import java.util.Vector;
 
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Term;
 import AGEval.AGEvaluator;
 import AGEval.Class;
 import AGEval.InvalidGrammarException;
@@ -96,7 +95,7 @@ public class FlatCppGenerator implements Backend {
 
 	@Override
 	public String output(String baseName, String visitOut, String visitDispatches, String outputDir, boolean write,
-			boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Hashtable<Variable, Term> binding,
+			boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Map<String, Term> binding,
 			AGEvaluator aleg) throws IOException, InvalidGrammarException {
 		if (write) {
 			AGEvaluatorSwipl.writeFile(outputDir + File.separator + visit_header_filename,
@@ -247,7 +246,7 @@ public class FlatCppGenerator implements Backend {
 	}
 
 	@Override
-	public String printCurrentPipelineBuild(Hashtable<Variable, Term> binding) throws InvalidGrammarException {
+	public String printCurrentPipelineBuild(Map<String, Term> binding) throws InvalidGrammarException {
 		return "[printCurrentPipelineBuild]";
 	}
 

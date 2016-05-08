@@ -1,10 +1,9 @@
 package AGEvalSwipl;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.HashSet;
-import java.util.Hashtable;
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Term;
 import AGEval.AGEvaluator;
 import AGEval.Class;
 import AGEval.InvalidGrammarException;
@@ -22,7 +21,7 @@ public interface Backend {
 	  //same, but prints w/NULL check on string addresses...
 	  public String logStmtVar(int indentSrc, int indentOut, String msg, ALEParser ast, AGEval.Class cls, String rhs, String rhsAddress) throws InvalidGrammarException;
 	  //public String logExpr(int indentSrc, int indentOut, String msg, String rhs);
-	  public String printCurrentPipelineBuild (Hashtable<Variable, Term> binding) throws InvalidGrammarException;
+	  public String printCurrentPipelineBuild (Map<String, Term> binding) throws InvalidGrammarException;
 	  public String functionHeader(ALEParser.Assignment assign, ALEParser ast) throws InvalidGrammarException;
       public String visitBlockHeader(Class cls, ALEParser ast) throws InvalidGrammarException;
       public String visitBlockFooter(Class cls, ALEParser ast) throws InvalidGrammarException;
@@ -38,7 +37,7 @@ public interface Backend {
 	  public void generateParseFiles(ALEParser ast, Schedule sched, String outputDir, boolean verbose, String functionHeaders) throws InvalidGrammarException;
 	  public String preVisits (AGEvaluator aleg, Schedule sched);
 	  public String postVisits (AGEvaluator aleg, Schedule sched) throws InvalidGrammarException;
-	  public String output (String baseName, String visitOut, String visitDispatches, String outputDir, boolean write, boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Hashtable<Variable, Term> binding, AGEvaluator aleg) throws IOException, InvalidGrammarException;
+	  public String output (String baseName, String visitOut, String visitDispatches, String outputDir, boolean write, boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Map<String, Term> binding, AGEvaluator aleg) throws IOException, InvalidGrammarException;
 	  public String replaceTypeVals(String body, ALEParser ast);
 
 }

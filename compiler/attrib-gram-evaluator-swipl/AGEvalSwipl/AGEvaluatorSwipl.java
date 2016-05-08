@@ -5,9 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Vector;
 
 import aleGrammar.ALEParser;
@@ -16,9 +16,8 @@ import aleGrammar.ALEParser.Cond;
 import aleGrammar.AleFrontend;
 import aleGrammar.GenSym;
 
-import jpl.Query;
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Query;
+import org.jpl7.Term;
 
 import AGEval.AGEvaluator;
 import AGEval.InvalidGrammarException;
@@ -868,14 +867,14 @@ public class AGEvaluatorSwipl {
 			if (verbose) System.out.println("Loaded query (" + queryTime + "ms)");
 			if (verbose) System.out.println("Using fixed (first) ordering of children: " + isFixedOrder);			
 		}
-		boolean hasNext () { return schedules.hasMoreSolutions(); }
+		boolean hasNext () { return schedules.hasNext(); }
 
 		String printNext () {
 			String res = "";
 
 			long time = -System.currentTimeMillis();
 			@SuppressWarnings("unchecked")
-			Hashtable<Variable, Term> binding = (Hashtable<Variable, Term>) schedules.nextSolution();
+			Map<String, Term> binding = schedules.next();
 			time += System.currentTimeMillis();
 
 			res += "Solution (" + time + "ms): \n";
@@ -921,7 +920,7 @@ public class AGEvaluatorSwipl {
 		
 		//most recently iterated schedule
 		public long time = 0;
-		public Hashtable<Variable, Term> binding = null;
+		public Map<String, Term> binding = null;
 		public Vector<HashSet<AGEval.Class>> buSubInorderBuIn = null;
 		public Vector<HashSet<AGEval.Class>> buSubInorderBus = null; 
 
@@ -962,12 +961,12 @@ public class AGEvaluatorSwipl {
 			
 		}
 		
-		boolean hasNext () { return schedules.hasMoreSolutions(); }
+		boolean hasNext () { return schedules.hasNext(); }
 
 		@SuppressWarnings("unchecked")
-		Hashtable<Variable, Term>  moveNext () {
+		Map<String, Term> moveNext () {
 			time = -System.currentTimeMillis();
-			binding = (Hashtable<Variable, Term>) schedules.nextSolution();
+			binding = schedules.next();
 			time += System.currentTimeMillis();
 			return binding;
 		}

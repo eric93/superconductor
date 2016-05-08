@@ -9,8 +9,7 @@ import AGEval.IFace;
 import AGEval.InvalidGrammarException;
 import AGEvalSwipl.AGEvaluatorSwipl.Schedule;
 import aleGrammar.ALEParser;
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Term;
 
 import java.io.File;
 import java.io.IOException;
@@ -298,7 +297,7 @@ public class WebCLGenerator extends OpenCLGenerator {
 		// TODO: Just write out visitDispatched argument rather than calling visitDispatchers() in postVisits()
 		@Override
 		public String output(String baseName, String visitOut, String visitDispatches, String outputDir, boolean write,
-				boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Hashtable<Variable, Term> binding,
+				boolean verbose, ALEParser ast, Schedule sched, String fHeaders, Map<String, Term> binding,
 				AGEvaluator aleg) throws IOException, InvalidGrammarException {
 			if (write) {
 				//Javascript stuff
@@ -332,7 +331,7 @@ public class WebCLGenerator extends OpenCLGenerator {
 			return "(no OpenCL out)";
 		}
 	
-	public String printCurrentPipelineBuild (Hashtable<Variable, Term> binding) throws InvalidGrammarException {
+	public String printCurrentPipelineBuild (Map<String, Term> binding) throws InvalidGrammarException {
 		StringBuilder contents = new StringBuilder();
 		contents.append("this._gen_getKernels = function() {\n");
 		int pass = 0;

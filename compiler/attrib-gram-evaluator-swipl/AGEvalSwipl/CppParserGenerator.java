@@ -3,6 +3,7 @@ package AGEvalSwipl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;

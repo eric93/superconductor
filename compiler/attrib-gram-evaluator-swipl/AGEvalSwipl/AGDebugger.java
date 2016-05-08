@@ -1,10 +1,9 @@
 package AGEvalSwipl;
 
-import java.util.Hashtable;
+import java.util.Map;
 
-import jpl.Query;
-import jpl.Term;
-import jpl.Variable;
+import org.jpl7.Query;
+import org.jpl7.Term;
 import AGEval.InvalidGrammarException;
 //import aleGrammar.AleFrontend;
 
@@ -14,9 +13,9 @@ public class AGDebugger {
 		String error = "Unsolvable: \n";		
 		Query rem = new Query("countSteps(N, Remaining), member([C, [RefName, Attrib, RefNameType]], Remaining)");
 		String nSteps = "0";
-		while (rem.hasMoreSolutions()) {
+		while (rem.hasNext()) {
 			@SuppressWarnings("unchecked")
-			Hashtable<Variable, Term> binding = (Hashtable<Variable, Term>) rem.nextSolution();
+			Map<String, Term> binding = rem.next();
 			nSteps = binding.get("N").toString(); //FIXME do just once
 			error += "  Cannot solve for class '" + binding.get("C") + "': " + binding.get("RefName") + "." + binding.get("Attrib") + "\n";
 		}

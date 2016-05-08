@@ -7,7 +7,7 @@ import antlr.RecognitionException;
 
 import AGEval.InvalidGrammarException;
 import AGEvalSwipl.AGEvaluatorSwipl.Schedule;
-import jpl.Term;
+import org.jpl7.Term;
 
 public class Tests {
 
